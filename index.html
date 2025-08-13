@@ -12,7 +12,25 @@
         <canvas id="tetris" width="240" height="400"></canvas>
         <div id="info">
             <h2>Score: <span id="score">0</span></h2>
+            <h2>High Score: <span id="high-score">0</span></h2>
+            <div id="controls">
+                <h3>Controls</h3>
+                <ul>
+                    <li><strong>Left Arrow:</strong> Move Left</li>
+                    <li><strong>Right Arrow:</strong> Move Right</li>
+                    <li><strong>Down Arrow:</strong> Move Down</li>
+                    <li><strong>Q:</strong> Rotate Left</li>
+                    <li><strong>W:</strong> Rotate Right</li>
+                </ul>
+            </div>
         </div>
+    </div>
+    <div id="audio-container" style="display: none;">
+        <audio id="move-sound" src="sounds/move.mp3" preload="auto"></audio>
+        <audio id="rotate-sound" src="sounds/rotate.mp3" preload="auto"></audio>
+        <audio id="drop-sound" src="sounds/drop.mp3" preload="auto"></audio>
+        <audio id="clear-sound"src="sounds/clear.mp3" preload="auto"></audio>
+        <audio id="gameover-sound" src="sounds/gameover.mp3" preload="auto"></audio>
     </div>
     <script src="script.js"></script>
 </body>

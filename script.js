@@ -1,6 +1,18 @@
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
+const highScoreElement = document.getElementById('high-score');
+
+const moveSound = document.getElementById('move-sound');
+const rotateSound = document.getElementById('rotate-sound');
+const dropSound = document.getElementById('drop-sound');
+const clearSound = document.getElementById('clear-sound');
+const gameOverSound = document.getElementById('gameover-sound');
+
+context.imageSmoothingEnabled = false;
+context.webkitImageSmoothingEnabled = false;
+context.mozImageSmoothingEnabled = false;
+context.msImageSmoothingEnabled = false;
 
 context.scale(20, 20);
 
@@ -78,6 +90,13 @@ function createPiece(type) {
     }
 }
 
+function playSound(sound) {
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(error => console.log("Audio play failed: " + error));
+    }
+}
+
 function drawMatrix(matrix, offset) {
     matrix.forEach((row, y) => {
         row.forEach((value, x) => {
@@ -145,7 +164,9 @@ function playerMove(offset) {
     player.pos.x += offset;
     if (collide(arena, player)) {
         player.pos.x -= offset;
+        return;
     }
+    playSound(moveSound);
 }
 
 function playerReset() {
@@ -155,6 +176,13 @@ function playerReset() {
     player.pos.x = (arena[0].length / 2 | 0) -
                    (player.matrix[0].length / 2 | 0);
     if (collide(arena, player)) {
+        playSound(gameOverSound);
+        // Game Over
+        if (player.score > player.highScore) {
+            player.highScore = player.score;
+            localStorage.setItem('tetrisHighScore', player.highScore);
+            updateHighScore();
+        }
         arena.forEach(row => row.fill(0));
         player.score = 0;
         updateScore();
@@ -174,6 +202,7 @@ function playerRotate(dir) {
             return;
         }
     }
+    playSound(rotateSound);
 }
 
 let dropCounter = 0;
@@ -198,8 +227,13 @@ function updateScore() {
     scoreElement.innerText = player.score;
 }
 
+function updateHighScore() {
+    highScoreElement.innerText = player.highScore;
+}
+
 function arenaSweep() {
     let rowCount = 1;
+    let swept = false;
     outer: for (let y = arena.length -1; y > 0; --y) {
         for (let x = 0; x < arena[y].length; ++x) {
             if (arena[y][x] === 0) {
@@ -213,6 +247,10 @@ function arenaSweep() {
 
         player.score += rowCount * 10;
         rowCount *= 2;
+        swept = true;
+    }
+    if (swept) {
+        playSound(clearSound);
     }
 }
 
@@ -223,6 +261,7 @@ document.addEventListener('keydown', event => {
         playerMove(1);
     } else if (event.keyCode === 40) {
         playerDrop();
+        playSound(dropSound);
     } else if (event.keyCode === 81) {
         playerRotate(-1);
     } else if (event.keyCode === 87) {
@@ -247,8 +286,14 @@ const player = {
     pos: {x: 0, y: 0},
     matrix: null,
     score: 0,
+    highScore: 0,
 };
+
+// Load high score
+const savedHighScore = localStorage.getItem('tetrisHighScore');
+player.highScore = savedHighScore ? parseInt(savedHighScore, 10) : 0;
 
 playerReset();
 updateScore();
+updateHighScore();
 update();
