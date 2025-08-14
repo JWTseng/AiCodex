@@ -103,8 +103,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Game State & Settings ---
-    let grid, currentPiece, nextPiece, score, level, lines, gameOver, isPaused, highScore;
-    let lineClearAnimation = { active: false, timer: 0, rows: [] };
+    const GameState = {
+        PLAYING: 'PLAYING',
+        LINE_FLASH: 'LINE_FLASH',
+        COLLAPSE: 'COLLAPSE',
+        GAME_OVER: 'GAME_OVER'
+    };
+    let grid, currentPiece, nextPiece, score, level, lines, isPaused, highScore, gameState;
+    let lineClearAnimation = { timer: 0, rows: [] };
     let settings = { isMuted: false };
 
     // --- Persistence ---
@@ -119,8 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Audio Engine ---
     const audioEngine = {
-        context: null,
-        isMuted: false,
+        context: null, isMuted: false,
         init() {
             if (this.context) return;
             try { this.context = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -179,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextPiece = { type: getRandomPieceType(), rotation: 0, x: 3, y: 0 };
         currentPiece.x = 3; currentPiece.y = 0;
         if (!isValidPosition(currentPiece)) {
-            gameOver = true;
+            gameState = GameState.GAME_OVER;
             audioEngine.play('gameOver');
             if (score > highScore) { highScore = score; saveHighScore(); }
         }
@@ -204,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     function drawNextPiece() {
+        if (!nextPiece) return;
         nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
         const shape = PIECES[nextPiece.type][0], color = COLORS[nextPiece.type];
         const boxW = shape.reduce((max, [_, c]) => Math.max(max, c + 1), 0);
@@ -220,14 +226,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function draw() {
         ctx.clearRect(0, 0, COLS, VISIBLE_ROWS);
         drawBoard();
-        if (lineClearAnimation.active) {
+        if (gameState === GameState.LINE_FLASH) {
             if (Math.floor(lineClearAnimation.timer / 50) % 2 === 0) {
                 ctx.fillStyle = 'white';
                 for (const y of lineClearAnimation.rows) {
                     if (y >= HIDDEN_ROWS) ctx.fillRect(0, y - HIDDEN_ROWS, COLS, 1);
                 }
             }
-        } else if (currentPiece) {
+        } else if (gameState === GameState.PLAYING && currentPiece) {
             drawPiece();
         }
         drawNextPiece();
@@ -255,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (key === 'r') { init(); return; }
         if (key === 'p') { togglePause(); return; }
         if (key === 'm') { audioEngine.toggleMute(); return; }
-        if (isPaused || gameOver || lineClearAnimation.active) return;
+        if (gameState !== GameState.PLAYING) return;
         switch (key) {
             case 'arrowleft': if (dasState.direction === 1) dasState.timer = 0; movePiece(-1); dasState.direction = -1; break;
             case 'arrowright': if (dasState.direction === -1) dasState.timer = 0; movePiece(1); dasState.direction = 1; break;
@@ -264,30 +270,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     function processContinuousInput(deltaTime) {
+        if (gameState !== GameState.PLAYING) return;
         if (keysDown['arrowdown']) softDrop();
         if (dasState.direction === 0) return;
-
-        // A direction key is held. Start or continue the DAS timer.
         dasState.timer += deltaTime;
         if (dasState.timer > DAS_DELAY) {
-            // DAS delay has been surpassed. Activate auto-repeat.
-            if (!dasState.active) {
-                dasState.active = true;
-                // Carry over any excess time from the DAS delay into the first ARR interval.
-                dasState.arrTimer = dasState.timer - DAS_DELAY;
-            } else {
-                dasState.arrTimer += deltaTime;
-            }
+            if (!dasState.active) { dasState.active = true; dasState.arrTimer = dasState.timer - DAS_DELAY; }
+            else { dasState.arrTimer += deltaTime; }
             const moves = Math.floor(dasState.arrTimer / ARR_INTERVAL);
-            if (moves > 0) {
-                for (let i = 0; i < moves; i++) movePiece(dasState.direction);
-                // Reset arrTimer but keep the remainder for the next frame, preventing timer drift.
-                dasState.arrTimer %= ARR_INTERVAL;
-            }
+            for (let i = 0; i < moves; i++) movePiece(dasState.direction);
+            dasState.arrTimer %= ARR_INTERVAL;
         }
     }
     function togglePause() {
-        if (gameOver) return;
+        if (gameState === GameState.GAME_OVER) return;
         isPaused = !isPaused;
         if (!isPaused) { lastTime = performance.now(); gameLoop(); }
         else {
@@ -299,30 +295,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     function movePiece(dir) {
-        if (isPaused || gameOver || lineClearAnimation.active) return;
+        if (gameState !== GameState.PLAYING || !currentPiece) return;
         currentPiece.x += dir;
         if (!isValidPosition(currentPiece)) currentPiece.x -= dir;
         else audioEngine.play('move');
     }
     function rotatePiece(dir) {
-        if (isPaused || gameOver || lineClearAnimation.active) return;
+        if (gameState !== GameState.PLAYING || !currentPiece) return;
         const oRotation = currentPiece.rotation;
         currentPiece.rotation = (currentPiece.rotation + dir + 4) % 4;
         if (!isValidPosition(currentPiece)) currentPiece.rotation = oRotation;
         else audioEngine.play('rotate');
     }
     function softDrop() {
-        if (isPaused || gameOver || lineClearAnimation.active) return;
+        if (gameState !== GameState.PLAYING || !currentPiece) return;
         currentPiece.y++;
-        if (!isValidPosition(currentPiece)) { currentPiece.y--; lockAndSpawn(); }
+        if (!isValidPosition(currentPiece)) { currentPiece.y--; handleLock(); }
         else score++;
     }
-    function lockAndSpawn() {
-        lockPiece(); audioEngine.play('lock');
-        const fullRows = findFullRows();
-        if (fullRows.length > 0) lineClearAnimation = { active: true, timer: 200, rows: fullRows };
-        else spawnNewPiece();
+    function handleLock() {
+        lockPiece();
+        audioEngine.play('lock');
         dasState = { timer: 0, direction: 0, arrTimer: 0, active: false };
+        const fullRows = findFullRows();
+        currentPiece = null; // CRITICAL FIX: Nullify piece before animation
+        if (fullRows.length > 0) {
+            lineClearAnimation.rows = fullRows;
+            lineClearAnimation.timer = 200;
+            gameState = GameState.LINE_FLASH;
+        } else {
+            spawnNewPiece();
+        }
     }
 
     // --- Game Loop ---
@@ -331,51 +334,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if (level >= 29) return 1; if (level >= 19) return 2; if (level >= 16) return 3;
         if (level >= 13) return 4; if (level >= 10) return 5; return LEVEL_SPEEDS[Math.min(level, 9)];
     }
-    function update(deltaTime) {
-        // The game loop is paused for other updates during the line clear animation.
-        if (lineClearAnimation.active) {
-            lineClearAnimation.timer -= deltaTime;
-            if (lineClearAnimation.timer <= 0) {
-                // Animation is over.
-                lineClearAnimation.active = false;
-
-                // Now, perform the deferred logic: remove lines, score, and spawn next piece.
-                const cleared = lineClearAnimation.rows.length;
-                removeRows(lineClearAnimation.rows);
-
-                if (cleared === 4) audioEngine.play('tetris');
-                else if (cleared > 0) audioEngine.play('clear');
-
-                score += SCORE_VALUES[cleared] * (level + 1);
-                lines += cleared;
-                const newLevel = Math.floor(lines / 10);
-                if (newLevel > level) {
-                    level = newLevel;
-                    audioEngine.play('levelUp');
-                }
-
-                spawnNewPiece();
-            }
-            return; // Stop further updates during animation.
-        }
-
-        if (isPaused || gameOver) return;
+    function updatePlaying(deltaTime) {
+        if (!currentPiece) return;
         processContinuousInput(deltaTime);
-
-        // --- Gravity ---
         const dropInterval = (getSpeedInFrames() / 60) * 1000;
         dropCounter += deltaTime;
         if (dropCounter > dropInterval) {
             dropCounter %= dropInterval;
             currentPiece.y++;
-            if (!isValidPosition(currentPiece)) {
-                currentPiece.y--;
-                lockAndSpawn();
-            }
+            if (!isValidPosition(currentPiece)) { currentPiece.y--; handleLock(); }
+        }
+    }
+    function updateLineFlash(deltaTime) {
+        lineClearAnimation.timer -= deltaTime;
+        if (lineClearAnimation.timer <= 0) gameState = GameState.COLLAPSE;
+    }
+    function updateCollapse() {
+        const cleared = lineClearAnimation.rows.length;
+        removeRows(lineClearAnimation.rows);
+        if (cleared === 4) audioEngine.play('tetris'); else if (cleared > 0) audioEngine.play('clear');
+        score += SCORE_VALUES[cleared] * (level + 1);
+        lines += cleared;
+        const newLevel = Math.floor(lines / 10);
+        if (newLevel > level) { level = newLevel; audioEngine.play('levelUp'); }
+        spawnNewPiece();
+        gameState = GameState.PLAYING;
+    }
+    function update(deltaTime) {
+        if (isPaused) return;
+        switch (gameState) {
+            case GameState.PLAYING: updatePlaying(deltaTime); break;
+            case GameState.LINE_FLASH: updateLineFlash(deltaTime); break;
+            case GameState.COLLAPSE: updateCollapse(); break;
+            case GameState.GAME_OVER: break;
         }
     }
     function gameLoop(timestamp) {
-        if (gameOver) {
+        if (gameState === GameState.GAME_OVER) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
             ctx.fillRect(0, VISIBLE_ROWS / 2 - 2, COLS, 4);
             ctx.font = '1.5px "Press Start 2P", sans-serif';
@@ -394,13 +389,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSettings();
         loadHighScore();
         grid = createEmptyGrid();
-        nextPiece = { type: getRandomPieceType(), rotation: 0, x: 3, y: 0 };
-        spawnNewPiece();
+        gameState = GameState.PLAYING;
+        isPaused = false;
         score = 0; level = 0; lines = 0;
-        gameOver = false; isPaused = false;
         dropCounter = 0; keysDown = {};
         dasState = { timer: 0, direction: 0, arrTimer: 0, active: false };
-        lineClearAnimation = { active: false, timer: 0, rows: [] };
+        lineClearAnimation = { timer: 0, rows: [] };
+        nextPiece = { type: getRandomPieceType(), rotation: 0, x: 3, y: 0 };
+        spawnNewPiece();
         lastTime = performance.now();
         gameLoop(lastTime);
     }
