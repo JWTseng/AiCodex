@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Classic TETRIS (Web)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="frame">
+    <header>
+      <h1>Classic Tetris (Web)</h1>
+      <button id="btnSettings" title="Settings">⚙</button>
+    </header>
+    <main>
+      <div id="boardWrap">
+        <canvas id="board" width="240" height="480" aria-label="Tetris board" role="img"></canvas>
+        <div id="overlay" class="hidden"></div>
+        <div id="crt" class="hidden"></div>
+      </div>
+      <aside id="hud">
+        <div class="panel">
+          <div class="label">SCORE</div>
+          <div id="score" class="value">0</div>
+        </div>
+        <div class="panel">
+          <div class="label">HIGH SCORE</div>
+          <div id="high" class="value">0</div>
+        </div>
+        <div class="panel">
+          <div class="label">LEVEL</div>
+          <div id="level" class="value">0</div>
+        </div>
+        <div class="panel">
+          <div class="label">LINES</div>
+          <div id="lines" class="value">0</div>
+        </div>
+        <div class="panel nextPanel">
+          <div class="label">NEXT</div>
+          <canvas id="next" width="96" height="96"></canvas>
+        </div>
+        <div class="panel controls">
+          <div class="label">CONTROLS</div>
+          <ul>
+            <li>← →: Move</li>
+            <li>↓: Soft Drop</li>
+            <li>↑ / X: Rotate CW</li>
+            <li>Z: Rotate CCW</li>
+            <li>P: Pause</li>
+            <li>R: Restart</li>
+            <li>M: Mute</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="settings">
+    <form method="dialog">
+      <h2>Settings</h2>
+      <div class="row">
+        <label>Pixel Size</label>
+        <select id="optPixel">
+          <option>16</option>
+          <option>20</option>
+          <option selected>24</option>
+          <option>32</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Color Mode</label>
+        <select id="optColor">
+          <option value="standard" selected>Standard</option>
+          <option value="cb">Color-blind Friendly</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Volume</label>
+        <input type="range" id="optVol" min="0" max="100" step="1" value="70" />
+        <span id="volVal">70%</span>
+      </div>
+      <div class="row">
+        <label>Mute</label>
+        <input type="checkbox" id="optMute" />
+      </div>
+      <div class="row">
+        <label>CRT Filter</label>
+        <input type="checkbox" id="optCRT" />
+      </div>
+      <details class="keys">
+        <summary>Key Bindings</summary>
+        <div class="keyRow"><span class="keyLabel">Left</span><button data-action="left" class="rebind">←</button></div>
+        <div class="keyRow"><span class="keyLabel">Right</span><button data-action="right" class="rebind">→</button></div>
+        <div class="keyRow"><span class="keyLabel">Soft Drop</span><button data-action="down" class="rebind">↓</button></div>
+        <div class="keyRow"><span class="keyLabel">Rotate CW</span><button data-action="cw" class="rebind">↑/X</button></div>
+        <div class="keyRow"><span class="keyLabel">Rotate CCW</span><button data-action="ccw" class="rebind">Z</button></div>
+        <div class="keyRow"><span class="keyLabel">Pause</span><button data-action="pause" class="rebind">P</button></div>
+        <div class="keyRow"><span class="keyLabel">Restart</span><button data-action="restart" class="rebind">R</button></div>
+        <div class="keyRow"><span class="keyLabel">Mute</span><button data-action="mute" class="rebind">M</button></div>
+        <div class="btns"><button id="btnResetKeys" type="button">Reset defaults</button></div>
+      </details>
+      <menu>
+        <button id="btnClose">Close</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="main.js"></script>
+</body>
+</html>
