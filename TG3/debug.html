@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NES俄罗斯方块 - 调试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        .game-section {
+            flex: 1;
+        }
+        .debug-section {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .debug-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .debug-label {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .debug-value {
+            color: #333;
+            margin-left: 10px;
+        }
+        .console {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="game-section">
+            <iframe src="index.html" width="100%" height="600" frameborder="0"></iframe>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">🎮 游戏状态调试</div>
+            
+            <div class="debug-item">
+                <span class="debug-label">游戏状态:</span>
+                <span class="debug-value" id="gameState">未知</span>
+            </div>
+            
+            <div class="debug-item">
+                <span class="debug-label">当前方块:</span>
+                <span class="debug-value" id="currentPiece">无</span>
+            </div>
+            
+            <div class="debug-item">
+                <span class="debug-label">方块位置:</span>
+                <span class="debug-value" id="piecePosition">无</span>
+            </div>
+            
+            <div class="debug-item">
+                <span class="debug-label">按键状态:</span>
+                <span class="debug-value" id="keyStatus">无</span>
+            </div>
+            
+            <div class="debug-item">
+                <span class="debug-label">ARE延迟:</span>
+                <span class="debug-value" id="areDelay">0</span>
+            </div>
+            
+            <div class="debug-title">🧪 测试控制</div>
+            <button class="test-btn" onclick="testLeftMove()">测试左移</button>
+            <button class="test-btn" onclick="testRightMove()">测试右移</button>
+            <button class="test-btn" onclick="testSoftDrop()">测试软降</button>
+            <button class="test-btn" onclick="testRotation()">测试旋转</button>
+            
+            <div class="debug-title">📝 控制台日志</div>
+            <div class="console" id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        // 重写console.log来捕获日志
+        const originalLog = console.log;
+        const consoleDiv = document.getElementById('console');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+        
+        // 测试函数
+        function testLeftMove() {
+            const iframe = document.querySelector('iframe');
+            iframe.contentWindow.postMessage({action: 'testLeftMove'}, '*');
+        }
+        
+        function testRightMove() {
+            const iframe = document.querySelector('iframe');
+            iframe.contentWindow.postMessage({action: 'testRightMove'}, '*');
+        }
+        
+        function testSoftDrop() {
+            const iframe = document.querySelector('iframe');
+            iframe.contentWindow.postMessage({action: 'testSoftDrop'}, '*');
+        }
+        
+        function testRotation() {
+            const iframe = document.querySelector('iframe');
+            iframe.contentWindow.postMessage({action: 'testRotation'}, '*');
+        }
+        
+        // 监听iframe消息
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'gameState') {
+                document.getElementById('gameState').textContent = event.data.state;
+            }
+            if (event.data.type === 'currentPiece') {
+                document.getElementById('currentPiece').textContent = event.data.piece;
+            }
+            if (event.data.type === 'piecePosition') {
+                document.getElementById('piecePosition').textContent = event.data.position;
+            }
+            if (event.data.type === 'keyStatus') {
+                document.getElementById('keyStatus').textContent = event.data.keys;
+            }
+            if (event.data.type === 'areDelay') {
+                document.getElementById('areDelay').textContent = event.data.delay;
+            }
+        });
+        
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('调试页面已加载');
+            console.log('请打开浏览器开发者工具查看详细日志');
+        });
+    </script>
+</body>
+</html>
+
+

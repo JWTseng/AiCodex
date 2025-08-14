@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>经典NES俄罗斯方块</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-section">
+                <div class="score-label">SCORE</div>
+                <div class="score-value" id="score">000000</div>
+            </div>
+            <div class="level-section">
+                <div class="level-label">LEVEL</div>
+                <div class="level-value" id="level">0</div>
+            </div>
+            <div class="lines-section">
+                <div class="lines-label">LINES</div>
+                <div class="lines-value" id="lines">0</div>
+            </div>
+        </div>
+        
+        <div class="game-main">
+            <div class="game-area">
+                <canvas id="gameCanvas" width="360" height="720"></canvas>
+                <div class="game-overlay" id="gameOverlay" style="display: none;">
+                    <div class="game-over-text">GAME OVER</div>
+                </div>
+            </div>
+            
+            <div class="game-sidebar">
+                <div class="next-piece-section">
+                    <div class="next-label">NEXT</div>
+                    <canvas id="nextCanvas" width="144" height="144"></canvas>
+                </div>
+                
+                <div class="controls-section">
+                    <div class="controls-title">控制</div>
+                    <div class="control-item">Enter : 开始游戏</div>
+                    <div class="control-item">← → : 移动</div>
+                    <div class="control-item">↓ : 软降</div>
+                    <div class="control-item">Q/↑ : 顺时针旋转</div>
+                    <div class="control-item">W : 逆时针旋转</div>
+                    <div class="control-item">Space : 暂停/继续/开始</div>
+                    <div class="control-item">R : 重置</div>
+                    <div class="control-item">M : 音乐开关</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-footer">
+            <button id="startBtn" class="game-btn">开始游戏</button>
+            <button id="pauseBtn" class="game-btn" disabled>暂停</button>
+            <button id="resetBtn" class="game-btn">重置</button>
+        </div>
+        
+    </div>
+    
+    <script src="audio.js"></script>
+    <script src="tetris.js"></script>
+</body>
+</html>

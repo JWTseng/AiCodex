@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NES俄罗斯方块 - 音频测试</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f380f 0%, #306230 50%, #8bac0f 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(15, 56, 15, 0.9);
+            border: 4px solid #8bac0f;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(139, 172, 15, 0.5);
+        }
+        
+        .title {
+            font-size: 2em;
+            font-weight: bold;
+            color: #9bbc0f;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0px #0f380f;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(139, 172, 15, 0.1);
+            border: 2px solid #8bac0f;
+            border-radius: 8px;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #9bbc0f;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .test-item {
+            background: rgba(48, 98, 48, 0.8);
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .test-item:hover {
+            background: rgba(139, 172, 15, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .test-btn {
+            background: #306230;
+            color: #ffffff;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+        
+        .test-btn:hover {
+            background: #8bac0f;
+            color: #0f380f;
+            box-shadow: 0 0 15px rgba(139, 172, 15, 0.5);
+        }
+        
+        .test-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .volume-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .volume-control {
+            background: rgba(48, 98, 48, 0.8);
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .volume-label {
+            display: block;
+            color: #9bbc0f;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            background: #0f380f;
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #8bac0f;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #9bbc0f;
+        }
+        
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #8bac0f;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #9bbc0f;
+        }
+        
+        .volume-value {
+            text-align: center;
+            color: #9bbc0f;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .toggle-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        
+        .toggle-label input[type="checkbox"] {
+            display: none;
+        }
+        
+        .toggle-text {
+            padding: 10px 20px;
+            background: #306230;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .toggle-label input[type="checkbox"]:checked + .toggle-text {
+            background: #8bac0f;
+            color: #0f380f;
+            font-weight: bold;
+        }
+        
+        .toggle-label:hover .toggle-text {
+            background: #8bac0f;
+            color: #0f380f;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(139, 172, 15, 0.2);
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+        }
+        
+        .status-text {
+            color: #9bbc0f;
+            font-weight: bold;
+        }
+        
+        .back-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto 0;
+            background: #8bac0f;
+            color: #0f380f;
+            border: 2px solid #9bbc0f;
+            border-radius: 6px;
+            padding: 15px 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #9bbc0f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 172, 15, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="title">🎵 音频测试页面</h1>
+        
+        <div class="test-section">
+            <h2 class="section-title">🎮 游戏音效测试</h2>
+            <div class="test-grid">
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('move')">方块移动</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('rotate')">方块旋转</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('lock')">方块锁定</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('line')">消行音效</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('levelup')">升级音效</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testSFX('gameover')">游戏结束</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="section-title">🎼 背景音乐测试</h2>
+            <div class="test-grid">
+                <div class="test-item">
+                    <button class="test-btn" onclick="testMusic('music1')">Music 1</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testMusic('music2')">Music 2</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="testMusic('music3')">Music 3</button>
+                </div>
+                <div class="test-item">
+                    <button class="test-btn" onclick="stopMusic()">停止音乐</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="section-title">🔊 音量控制</h2>
+            <div class="volume-controls">
+                <div class="volume-control">
+                    <label class="volume-label">主音量</label>
+                    <input type="range" id="masterVolume" min="0" max="100" value="30" class="volume-slider">
+                    <div class="volume-value" id="masterVolumeValue">30%</div>
+                </div>
+                <div class="volume-control">
+                    <label class="volume-label">音乐音量</label>
+                    <input type="range" id="musicVolume" min="0" max="100" value="30" class="volume-slider">
+                    <div class="volume-value" id="musicVolumeValue">30%</div>
+                </div>
+                <div class="volume-control">
+                    <label class="volume-label">音效音量</label>
+                    <input type="range" id="sfxVolume" min="0" max="100" value="80" class="volume-slider">
+                    <div class="volume-value" id="sfxVolumeValue">80%</div>
+                </div>
+            </div>
+            
+            <div class="toggle-controls">
+                <label class="toggle-label">
+                    <input type="checkbox" id="musicToggle" checked>
+                    <span class="toggle-text">音乐</span>
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="sfxToggle" checked>
+                    <span class="toggle-text">音效</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="status">
+            <div class="status-text" id="statusText">音频系统已准备就绪</div>
+        </div>
+        
+        <a href="index.html" class="back-btn">返回游戏</a>
+    </div>
+
+    <script src="audio.js"></script>
+    <script>
+        let audioManager = null;
+        
+        // 初始化音频管理器
+        document.addEventListener('DOMContentLoaded', () => {
+            audioManager = new NESTetrisAudio();
+            updateStatus('音频系统初始化完成');
+            bindAudioControls();
+        });
+        
+        // 测试音效
+        function testSFX(type) {
+            if (audioManager) {
+                audioManager.playSFX(type);
+                updateStatus(`播放音效: ${type}`);
+            }
+        }
+        
+        // 测试音乐
+        function testMusic(type) {
+            if (audioManager) {
+                audioManager.generateBackgroundMusic(type);
+                updateStatus(`播放音乐: ${type}`);
+            }
+        }
+        
+        // 停止音乐
+        function stopMusic() {
+            if (audioManager) {
+                audioManager.stopMusic();
+                updateStatus('音乐已停止');
+            }
+        }
+        
+        // 更新状态
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+        
+        // 绑定音频控制
+        function bindAudioControls() {
+            // 主音量控制
+            const masterVolumeSlider = document.getElementById('masterVolume');
+            const masterVolumeValue = document.getElementById('masterVolumeValue');
+            
+            masterVolumeSlider.addEventListener('input', (e) => {
+                const volume = e.target.value / 100;
+                audioManager.setMasterVolume(volume);
+                masterVolumeValue.textContent = e.target.value + '%';
+            });
+            
+            // 音乐音量控制
+            const musicVolumeSlider = document.getElementById('musicVolume');
+            const musicVolumeValue = document.getElementById('musicVolumeValue');
+            
+            musicVolumeSlider.addEventListener('input', (e) => {
+                const volume = e.target.value / 100;
+                audioManager.setMusicVolume(volume);
+                musicVolumeValue.textContent = e.target.value + '%';
+            });
+            
+            // 音效音量控制
+            const sfxVolumeSlider = document.getElementById('sfxVolume');
+            const sfxVolumeValue = document.getElementById('sfxVolumeValue');
+            
+            sfxVolumeSlider.addEventListener('input', (e) => {
+                const volume = e.target.value / 100;
+                audioManager.setSFXVolume(volume);
+                sfxVolumeValue.textContent = e.target.value + '%';
+            });
+            
+            // 音乐开关
+            const musicToggle = document.getElementById('musicToggle');
+            musicToggle.addEventListener('change', (e) => {
+                audioManager.toggleMusic(e.target.checked);
+                updateStatus(e.target.checked ? '音乐已开启' : '音乐已关闭');
+            });
+            
+            // 音效开关
+            const sfxToggle = document.getElementById('sfxToggle');
+            sfxToggle.addEventListener('change', (e) => {
+                audioManager.toggleSFX(e.target.checked);
+                updateStatus(e.target.checked ? '音效已开启' : '音效已关闭');
+            });
+        }
+        
+        // 页面点击时恢复音频上下文
+        document.addEventListener('click', () => {
+            if (audioManager) {
+                audioManager.resumeAudioContext();
+            }
+        });
+    </script>
+</body>
+</html>
+
+
