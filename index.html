@@ -1,50 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classic Tetris</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Classic Tetris</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-    <h1>Classic Tetris (Web)</h1>
-    <div id="game-container">
-        <canvas id="tetris-canvas"></canvas>
-        <div id="hud">
-            <div class="hud-item">
-                <h2>SCORE</h2>
-                <p id="score">0</p>
-            </div>
-            <div class="hud-item">
-                <h2>HIGH SCORE</h2>
-                <p id="high-score">0</p>
-            </div>
-            <div class="hud-item">
-                <h2>LEVEL</h2>
-                <p id="level">0</p>
-            </div>
-            <div class="hud-item">
-                <h2>LINES</h2>
-                <p id="lines">0</p>
-            </div>
-            <div class="hud-item">
-                <h2>NEXT</h2>
-                <canvas id="next-canvas"></canvas>
-            </div>
-            <div class="hud-item" id="controls">
-                <h2>CONTROLS</h2>
-                <p style="font-size: 0.7rem; text-align: left; line-height: 1.5;">
-                    &larr; &rarr;: Move<br>
-                    &darr;: Soft Drop<br>
-                    &uarr;/X: Rotate CW<br>
-                    Z: Rotate CCW<br>
-                    P: Pause<br>
-                    R: Restart<br>
-                    M: Mute
-                </p>
-            </div>
-        </div>
+  <div class="wrap">
+    <h1>Classic Tetris</h1>
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>High Score: <span id="highScore">0</span></div>
     </div>
-    <script src="main.js"></script>
+    <canvas id="tetris" width="240" height="400"></canvas>
+
+    <div class="help">
+      <p>Controls: ← → move, ↓ soft drop, Q/W rotate, P pause</p>
+    </div>
+  </div>
+
+  <!-- audio assets -->
+  <audio id="move-sound" src="sounds/move.mp3" preload="auto"></audio>
+  <audio id="rotate-sound" src="sounds/rotate.mp3" preload="auto"></audio>
+  <audio id="drop-sound" src="sounds/drop.mp3" preload="auto"></audio>
+  <audio id="clear-sound" src="sounds/clear.mp3" preload="auto"></audio>
+  <audio id="gameover-sound" src="sounds/gameover.mp3" preload="auto"></audio>
+
+  <script src="script.js"></script>
 </body>
 </html>
