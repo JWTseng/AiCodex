@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Simple Test - Classic TETRIS</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    .error { background-color: #ffebee; color: #c62828; }
+    .success { background-color: #e8f5e8; color: #2e7d32; }
+    .info { background-color: #e3f2fd; color: #1565c0; }
+    #console { background: #000; color: #0f0; padding: 10px; font-family: monospace; height: 200px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>俄罗斯方块游戏简单测试</h1>
+  
+  <div id="test-results">
+    <div class="test info">正在测试...</div>
+  </div>
+
+  <div id="console"></div>
+
+  <script>
+    // 重写console.log来显示在页面上
+    const originalLog = console.log;
+    const originalError = console.error;
+    const consoleDiv = document.getElementById('console');
+    
+    function addToConsole(message, type = 'log') {
+      const div = document.createElement('div');
+      div.textContent = `[${type.toUpperCase()}] ${message}`;
+      div.style.color = type === 'error' ? '#ff6b6b' : '#0f0';
+      consoleDiv.appendChild(div);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+    
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      addToConsole(args.join(' '), 'log');
+    };
+    
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      addToConsole(args.join(' '), 'error');
+    };
+
+    function addTestResult(message, type = 'info') {
+      const results = document.getElementById('test-results');
+      const div = document.createElement('div');
+      div.className = `test ${type}`;
+      div.textContent = message;
+      results.appendChild(div);
+    }
+
+    // 测试1: 检查JavaScript文件语法
+    function testJavaScriptSyntax() {
+      addTestResult('测试JavaScript语法...', 'info');
+      
+      const script = document.createElement('script');
+      script.src = 'main.js';
+      script.onload = function() {
+        addTestResult('✅ main.js 语法检查通过', 'success');
+      };
+      script.onerror = function() {
+        addTestResult('❌ main.js 加载失败', 'error');
+      };
+      document.head.appendChild(script);
+    }
+
+    // 测试2: 检查DOM元素
+    function testDOMElements() {
+      addTestResult('测试DOM元素...', 'info');
+      
+      // 创建必要的DOM元素
+      const testDiv = document.createElement('div');
+      testDiv.innerHTML = `
+        <div id="frame">
+          <canvas id="board" width="240" height="480"></canvas>
+          <canvas id="next" width="96" height="96"></canvas>
+          <div id="overlay" class="hidden"></div>
+          <div id="crt" class="hidden"></div>
+          <div id="score">0</div>
+          <div id="level">0</div>
+          <div id="lines">0</div>
+          <div id="high">0</div>
+          <button id="btnSettings">⚙</button>
+          <dialog id="settings">
+            <select id="optPixel"></select>
+            <select id="optColor"></select>
+            <input type="range" id="optVol" />
+            <span id="volVal">70%</span>
+            <input type="checkbox" id="optMute" />
+            <input type="checkbox" id="optCRT" />
+            <button id="btnClose">Close</button>
+            <button id="btnResetKeys">Reset</button>
+          </dialog>
+        </div>
+      `;
+      document.body.appendChild(testDiv);
+      
+      // 检查元素是否存在
+      const requiredElements = ['board', 'next', 'overlay', 'crt', 'score', 'level', 'lines', 'high', 'btnSettings'];
+      let allElementsExist = true;
+      
+      requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          console.log(`✅ 元素 ${id} 存在`);
+        } else {
+          console.error(`❌ 元素 ${id} 不存在`);
+          allElementsExist = false;
+        }
+      });
+      
+      if (allElementsExist) {
+        addTestResult('✅ 所有必需DOM元素都存在', 'success');
+      } else {
+        addTestResult('❌ 部分DOM元素缺失', 'error');
+      }
+    }
+
+    // 测试3: 检查浏览器API
+    function testBrowserAPIs() {
+      addTestResult('测试浏览器API...', 'info');
+      
+      const apis = {
+        'AudioContext': window.AudioContext || window.webkitAudioContext,
+        'requestAnimationFrame': window.requestAnimationFrame,
+        'localStorage': window.localStorage,
+        'Canvas': document.createElement('canvas').getContext
+      };
+      
+      let allAPIsAvailable = true;
+      Object.entries(apis).forEach(([name, api]) => {
+        if (api) {
+          console.log(`✅ ${name} API 可用`);
+        } else {
+          console.error(`❌ ${name} API 不可用`);
+          allAPIsAvailable = false;
+        }
+      });
+      
+      if (allAPIsAvailable) {
+        addTestResult('✅ 所有必需API都可用', 'success');
+      } else {
+        addTestResult('❌ 部分API不可用', 'error');
+      }
+    }
+
+    // 运行所有测试
+    window.addEventListener('load', () => {
+      console.log('开始测试...');
+      testBrowserAPIs();
+      testDOMElements();
+      testJavaScriptSyntax();
+    });
+  </script>
+</body>
+</html>

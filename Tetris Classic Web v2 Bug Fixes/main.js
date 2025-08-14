@@ -133,11 +133,10 @@
 
   // Audio
   const audio = makeAudio();
-  setMute(settings.mute);
-  audio.setVolume(settings.volume);
+  updateMute(settings.mute);
+  setVolume(settings.volume);
 
-  // Spawn initial piece
-  spawn();
+  // Spawn initial piece will be called after DOM is ready
 
   // --------------- Piece definitions (4x4 masks) ---------------
   // Each entry is array of 4 rotations; each rotation is list of [r,c] coordinates within 4x4
@@ -233,7 +232,7 @@
     if (!canPlace(current)){
       // immediate Game Over
       state = GameState.GameOver;
-      audio.play('over');
+      play('over');
       overlay('GAME OVER');
       settings.highScore = Math.max(settings.highScore|0, score|0);
       saveSettings();
@@ -249,7 +248,7 @@
   }
   function hideOverlay(){ document.getElementById('overlay').classList.add('hidden'); }
 
-  function setMute(m){ settings.mute = !!m; audio.setMute(settings.mute); }
+  function updateMute(m){ settings.mute = !!m; audio.setMute(settings.mute); }
 
   // -------------------- Rendering --------------------
   function draw(){
@@ -527,7 +526,7 @@
       return;
     }
     if(action === 'restart'){ resetGame(); return; }
-    if(action === 'mute'){ setMute(!settings.mute); saveSettings(); return; }
+    if(action === 'mute'){ updateMute(!settings.mute); saveSettings(); return; }
 
     if(paused || state !== GameState.Playing) return;
 
@@ -594,11 +593,11 @@
   optVol.addEventListener('input', ()=>{
     const v = parseInt(optVol.value,10)/100;
     volVal.textContent = `${Math.round(v*100)}%`;
-    audio.setVolume(v);
+    setVolume(v);
     settings.volume = v; saveSettings();
   });
   optMute.addEventListener('change', ()=>{
-    setMute(optMute.checked);
+    updateMute(optMute.checked);
     saveSettings();
   });
   optCRT.addEventListener('change', ()=>{
@@ -639,16 +638,28 @@
   function saveSettings(){ try{ localStorage.setItem('tetrisClassicSettings', JSON.stringify(settings)); }catch{} }
 
   // -------------------- Audio --------------------
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let audioCtx = null;
   let muted=false, volume=settings.volume;
+  
+  function initAudio() {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {
+      console.warn('Audio context not supported:', e);
+    }
+  }
   function playTone(freq, dur=0.06, type='square', gain=0.05){
-    if(muted) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.value = gain * Math.max(0,Math.min(1,volume));
-    o.connect(g).connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + dur);
+    if(muted || !audioCtx) return;
+    try {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.value = gain * Math.max(0,Math.min(1,volume));
+      o.connect(g).connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + dur);
+    } catch(e) {
+      console.warn('Audio play failed:', e);
+    }
   }
   function play(name){
     switch(name){
@@ -668,7 +679,18 @@
   function makeAudio(){ return { setMute, setVolume }; }
 
   // -------------------- Init --------------------
-  document.getElementById('crt').classList.toggle('hidden', !settings.crt);
-  requestAnimationFrame(step);
+  function initGame() {
+    initAudio();
+    document.getElementById('crt').classList.toggle('hidden', !settings.crt);
+    spawn(); // Spawn initial piece after DOM is ready
+    requestAnimationFrame(step);
+  }
+
+  // 等待DOM加载完成后再初始化游戏
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGame);
+  } else {
+    initGame();
+  }
 
 })();
