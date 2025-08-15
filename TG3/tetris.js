@@ -1763,9 +1763,82 @@ class NESTetris {
 
 }
 
-// 初始化游戏
-document.addEventListener('DOMContentLoaded', () => {
-    const tetrisGame = new NESTetris();
-    // 自动开始游戏
-    tetrisGame.autoStart();
-});
+    // 初始化游戏
+    document.addEventListener('DOMContentLoaded', () => {
+        const tetrisGame = new NESTetris();
+        // 自动开始游戏
+        tetrisGame.autoStart();
+        
+        // 添加隐藏的清理功能（按Ctrl+Shift+C清理High Scores）
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                if (confirm('确定要清理所有High Scores数据吗？')) {
+                    localStorage.removeItem('tetrisHighScores');
+                    alert('High Scores数据已清理！');
+                    // 刷新高分显示
+                    if (tetrisGame.highScoreManager) {
+                        tetrisGame.highScoreManager.updateDisplay();
+                    }
+                }
+            }
+        });
+        
+        // 添加隐藏功能：连续点击HIGH SCORES标题10次清零数据
+        let clickCount = 0;
+        let lastClickTime = 0;
+        const clickTimeout = 3000; // 3秒内需要完成10次点击
+        
+        const highScoresTitle = document.getElementById('highScoresTitle');
+        if (highScoresTitle) {
+            highScoresTitle.addEventListener('click', () => {
+                const currentTime = Date.now();
+                
+                // 如果距离上次点击超过3秒，重置计数
+                if (currentTime - lastClickTime > clickTimeout) {
+                    clickCount = 0;
+                }
+                
+                clickCount++;
+                lastClickTime = currentTime;
+                
+                // 显示点击进度（可选）
+                if (clickCount === 1) {
+                    highScoresTitle.style.color = '#ff6b6b';
+                } else if (clickCount >= 5) {
+                    highScoresTitle.style.color = '#ff4757';
+                }
+                
+                // 达到10次点击
+                if (clickCount >= 10) {
+                    if (confirm('🎯 隐藏功能触发！确定要清零所有High Scores数据吗？')) {
+                        localStorage.removeItem('tetrisHighScores');
+                        alert('✅ High Scores数据已清零！');
+                        
+                        // 刷新高分显示
+                        if (tetrisGame.highScoreManager) {
+                            tetrisGame.highScoreManager.updateDisplay();
+                        }
+                        
+                        // 重置点击计数和颜色
+                        clickCount = 0;
+                        highScoresTitle.style.color = '';
+                    } else {
+                        // 用户取消，重置计数
+                        clickCount = 0;
+                        highScoresTitle.style.color = '';
+                    }
+                }
+                
+                // 3秒后自动重置计数和颜色
+                setTimeout(() => {
+                    if (Date.now() - lastClickTime > clickTimeout) {
+                        clickCount = 0;
+                        highScoresTitle.style.color = '';
+                    }
+                }, clickTimeout);
+            });
+            
+            // 添加鼠标悬停提示（可选）
+            highScoresTitle.title = '连续点击10次可清零数据';
+        }
+    });
