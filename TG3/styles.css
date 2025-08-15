@@ -52,46 +52,73 @@ body {
     display: flex;
     justify-content: space-between;
     margin-bottom: 20px;
-    padding: 10px;
+    padding: 15px;
     background-color: var(--nes-black);
     border: 2px solid var(--nes-light-green);
     border-radius: 4px;
 }
 
-.score-section, .level-section, .lines-section {
+.score-section, .combo-section, .level-section, .lines-section {
     text-align: center;
+    flex: 1;
+    margin: 0 15px;
 }
 
-.score-label, .level-label, .lines-label {
-    font-size: 12px;
+.score-label, .combo-label, .level-label, .lines-label {
+    font-size: 20px;
     color: var(--nes-yellow);
-    margin-bottom: 5px;
+    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-weight: normal;
 }
 
 .score-value, .level-value, .lines-value {
-    font-size: 16px;
+    font-size: 36px;
     font-weight: bold;
     color: var(--nes-white);
-    background-color: var(--nes-black);
-    padding: 4px 8px;
-    border: 1px solid var(--nes-light-green);
-    border-radius: 2px;
-    min-width: 60px;
     text-align: center;
+    display: block;
+    min-width: 80px;
 }
+
+.combo-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-align: center;
+    display: block;
+    min-width: 60px;
+    transition: all 0.3s ease;
+}
+
+.combo-value.active {
+    color: #ff4444;
+    text-shadow: 0 0 10px #ff6b6b;
+    animation: comboGlow 0.5s ease-out;
+}
+
+@keyframes comboGlow {
+    0% { text-shadow: 0 0 5px #ff6b6b; }
+    50% { text-shadow: 0 0 20px #ff6b6b; }
+    100% { text-shadow: 0 0 5px #ff6b6b; }
+}
+
+
 
 .game-main {
     display: flex;
-    gap: 20px;
+    gap: 25px;
     align-items: flex-start;
+    justify-content: center;
 }
 
 .game-area {
     position: relative;
     border: 3px solid var(--nes-light-green);
     background-color: var(--nes-black);
+    flex-shrink: 0;
+    /* Game Area总高度：800px(Canvas) + 6px(边框) = 806px */
 }
 
 #gameCanvas {
@@ -100,6 +127,7 @@ body {
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    /* Canvas尺寸：400px × 800px */
 }
 
 .game-overlay {
@@ -124,22 +152,66 @@ body {
     text-shadow: 2px 2px 0px var(--nes-black);
 }
 
+.score-value {
+    color: var(--nes-white);
+    font-weight: bold;
+}
+
+
+
+
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .game-over-container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .game-over-title {
+        font-size: 2em;
+    }
+    
+    .final-score {
+        font-size: 1.8em;
+    }
+    
+    .score-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+
+}
+
+/* 精确计算的右侧面板布局 - 总高度806px */
 .game-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 20px; /* 调整间距为20px */
+    width: 280px;
+    flex-shrink: 0;
+    /* 右侧面板总高度：140 + 20 + 224 + 20 + 350 = 754px */
 }
 
 .next-piece-section {
     background-color: var(--nes-black);
-    border: 2px solid var(--nes-light-green); /* 恢复外框可见 */
+    border: 2px solid var(--nes-light-green);
     border-radius: 4px;
-    padding: 10px;
+    padding: 15px;
     text-align: center;
+    height: 140px; /* 调整高度：140px */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    /* NEXT窗口总高度：140px */
 }
 
 .next-label {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--nes-yellow);
     margin-bottom: 10px;
     text-transform: uppercase;
@@ -148,24 +220,32 @@ body {
 
 #nextCanvas {
     background-color: var(--nes-black);
-    border: 1px solid transparent; /* 透明度0% - 完全不可见 */
+    border: 1px solid transparent;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    margin-top: -10px; /* 向上移动10px */
+    /* Canvas尺寸：80px × 80px */
 }
 
 .controls-section {
     background-color: var(--nes-black);
     border: 2px solid var(--nes-light-green);
     border-radius: 4px;
-    padding: 15px;
-    min-width: 150px;
+    padding: 20px;
+    height: 224px; /* 减少20%：从280px减少到224px */
+    display: flex;
+    flex-direction: column;
+    /* CONTROLS窗口总高度：224px */
 }
 
 .controls-title {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--nes-yellow);
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
     text-align: center;
@@ -174,23 +254,23 @@ body {
 .control-item {
     display: grid;
     grid-template-columns: auto auto 1fr;
-    gap: 8px;
+    gap: 5px; /* 调整列间距为5px */
     align-items: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--nes-white);
-    margin-bottom: 5px;
-    padding: 2px 0;
+    margin-bottom: 4px; /* 减少50%：从8px减少到4px */
+    padding: 1.5px 0; /* 减少50%：从3px减少到1.5px */
 }
 
 .control-key {
     text-align: right;
-    min-width: 60px;
+    min-width: 70px;
     font-weight: bold;
 }
 
 .control-separator {
     text-align: center;
-    min-width: 10px;
+    min-width: 15px;
     color: var(--nes-yellow);
 }
 
@@ -411,3 +491,154 @@ body {
         gap: 10px;
     }
 }
+
+/* 高分记录表格样式 */
+.high-scores-section {
+    background-color: #0f380f;
+    border: 2px solid #8bac0f;
+    border-radius: 6px;
+    padding: 20px;
+    height: 350px; /* 调整高度：350px */
+    display: flex;
+    flex-direction: column;
+    /* HIGH SCORES窗口总高度：350px */
+}
+
+.high-scores-title {
+    color: #9bbc0f;
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #8bac0f;
+    padding-bottom: 10px;
+    flex: 0 0 auto;
+}
+
+.high-scores-table {
+    width: 85%; /* 进一步减少宽度，让居中效果更明显 */
+    border-collapse: collapse;
+    font-size: 11px; /* 缩小字号：从12px减少到11px */
+    font-family: 'Courier New', monospace;
+    flex: 1;
+    margin: 0 auto; /* 水平居中 */
+}
+
+.high-scores-table th,
+.high-scores-table td {
+    padding: 2px 4px; /* 减少内边距：从4px 6px减少到2px 4px */
+    text-align: center;
+    border: 1px solid #306230;
+}
+
+.high-scores-table th {
+    background-color: #306230;
+    color: #9bbc0f;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.high-scores-table td {
+    background-color: #0f380f;
+    color: #ffffff;
+}
+
+.high-scores-table tr:nth-child(1) td {
+    background-color: #306230;
+    color: #9bbc0f;
+    font-weight: bold;
+}
+
+.high-scores-table tr:nth-child(2) td {
+    background-color: #2a562a;
+    color: #8bac0f;
+}
+
+.high-scores-table tr:nth-child(3) td {
+    background-color: #244a24;
+    color: #8bac0f;
+}
+
+/* 连击特效样式 */
+.combo-display {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.combo-display.show {
+    opacity: 1;
+    animation: comboPulse 0.5s ease-out;
+}
+
+@keyframes comboPulse {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* 9.999倒计时计时器样式 */
+.combo-timer {
+    position: absolute;
+    bottom: 400px; /* 距离底部400px（往下移动200px） */
+    left: 50%; /* 水平居中 */
+    transform: translate(-50%, -50%);
+    font-family: 'Courier New', monospace;
+    font-size: 64px; /* 更大一号字体 */
+    font-weight: bold;
+    color: var(--nes-light-green);
+    text-shadow: 0 0 10px var(--nes-light-green);
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    display: none; /* 默认隐藏 */
+}
+
+.combo-timer.show {
+    opacity: 0.5; /* 50%透明度 */
+    display: block; /* 显示时改为block */
+}
+
+.combo-timer.active {
+    animation: timerGlow 0.5s ease-in-out;
+}
+
+@keyframes timerGlow {
+    0% { text-shadow: 0 0 10px var(--nes-light-green); }
+    50% { text-shadow: 0 0 20px var(--nes-light-green), 0 0 30px var(--nes-light-green); }
+    100% { text-shadow: 0 0 10px var(--nes-light-green); }
+}
+
+/* 粒子特效样式 */
+.combo-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 999;
+    animation: particleFade 1s linear forwards;
+}
+
+@keyframes particleFade {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+

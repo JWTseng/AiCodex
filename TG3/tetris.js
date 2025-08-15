@@ -3,12 +3,217 @@
  * 基于1989年任天堂娱乐系统(NES)北美(NTSC)版本
  */
 
+// 高分记录管理器
+class HighScoreManager {
+    constructor() {
+        this.scores = this.loadScores();
+    }
+    
+    loadScores() {
+        const saved = localStorage.getItem('tetrisHighScores');
+        return saved ? JSON.parse(saved) : [];
+    }
+    
+    saveScores() {
+        localStorage.setItem('tetrisHighScores', JSON.stringify(this.scores));
+    }
+    
+    addScore(score, level, lines, duration) {
+        const newScore = {
+            score, level, lines, duration,
+            timestamp: Date.now()
+        };
+        
+        this.scores.push(newScore);
+        this.scores.sort((a, b) => b.score - a.score);
+        this.scores = this.scores.slice(0, 10); // 只保留前10名
+        
+        this.saveScores();
+        this.updateDisplay();
+    }
+    
+    updateDisplay() {
+        const tbody = document.getElementById('highScoresBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        for (let i = 0; i < this.scores.length; i++) {
+            const score = this.scores[i];
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${score.score.toString().padStart(6, '0')}</td>
+                <td>${score.level}</td>
+                <td>${score.lines}</td>
+                <td>${this.formatTime(score.duration)}</td>
+            `;
+            
+            tbody.appendChild(row);
+        }
+        
+        // 填充空行到10条
+        for (let i = this.scores.length; i < 10; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+    
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+}
+
+// 游戏计时器
+class GameTimer {
+    constructor() {
+        this.startTime = null;
+        this.endTime = null;
+    }
+    
+    start() {
+        this.startTime = Date.now();
+    }
+    
+    end() {
+        this.endTime = Date.now();
+        return Math.floor((this.endTime - this.startTime) / 1000);
+    }
+    
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+}
+
+// 连击系统 - 完整重构版本
+class ComboSystem {
+    constructor() {
+        // 核心状态
+        this.comboCount = 0;           // 当前连击数
+        this.lastClearTime = 0;        // 上次消除时间戳
+        this.comboWindow = 10000;      // 连击时间窗口（10秒）
+        this.maxCombo = 999;           // 最大连击数
+        
+        // 特效状态管理
+        this.lastEffectComboCount = 0; // 上次触发特效的连击数
+        this.isEffectPlaying = false;  // 特效是否正在播放
+        
+        // 计时器状态
+        this.timerActive = false;      // 计时器是否激活
+        this.timerStartTime = 0;       // 计时器开始时间
+    }
+    
+    // 检查并更新连击
+    checkCombo(currentTime) {
+        if (currentTime - this.lastClearTime < this.comboWindow) {
+            // 在10秒内，连击累加
+            this.comboCount++;
+            this.comboCount = Math.min(this.comboCount, this.maxCombo);
+            // 重新计时：重置计时器开始时间
+            this.timerActive = true;
+            this.timerStartTime = currentTime;
+            return true;
+        } else {
+            // 超过10秒，重置连击为1
+            this.comboCount = 1;
+            this.timerActive = true;
+            this.timerStartTime = currentTime;
+            this.lastEffectComboCount = 0; // 重置特效记录
+            return false;
+        }
+    }
+    
+    // 更新消除时间
+    updateClearTime(currentTime) {
+        this.lastClearTime = currentTime;
+    }
+    
+    // 检查是否需要触发特效
+    shouldTriggerEffect() {
+        return this.comboCount > this.lastEffectComboCount && 
+               this.comboCount >= 2 && 
+               !this.isEffectPlaying;
+    }
+    
+    // 标记特效已触发
+    markEffectTriggered() {
+        this.lastEffectComboCount = this.comboCount;
+        this.isEffectPlaying = true;
+        
+        // 1秒后重置特效播放状态
+        setTimeout(() => {
+            this.isEffectPlaying = false;
+        }, 1000);
+    }
+    
+    // 获取连击倍数
+    getMultiplier() {
+        return this.comboCount;
+    }
+    
+    // 获取计时器信息
+    getTimerInfo(currentTime) {
+        if (!this.timerActive || this.comboCount === 0) {
+            return { remaining: 10.00, active: false };
+        }
+        
+        const elapsed = currentTime - this.timerStartTime;
+        const remaining = Math.max(0, (this.comboWindow - elapsed) / 1000);
+        
+        return {
+            remaining: remaining,
+            active: this.timerActive && this.comboCount > 0
+        };
+    }
+    
+    // 重置系统
+    reset() {
+        this.comboCount = 0;
+        this.lastClearTime = 0;
+        this.timerActive = false;
+        this.timerStartTime = 0;
+        this.lastEffectComboCount = 0;
+        this.isEffectPlaying = false;
+        
+        // 清理UI元素
+        this.clearUI();
+    }
+    
+    // 清理UI元素
+    clearUI() {
+        const comboDisplay = document.getElementById('comboDisplay');
+        const comboTimer = document.getElementById('comboTimer');
+        
+        if (comboDisplay) {
+            comboDisplay.classList.remove('show');
+        }
+        
+        if (comboTimer) {
+            comboTimer.classList.remove('show');
+            comboTimer.textContent = '';
+            comboTimer.style.color = 'var(--nes-light-green)';
+        }
+    }
+}
+
 class NESTetris {
     constructor() {
         // 游戏区域尺寸 (10x20)
         this.GRID_WIDTH = 10;
         this.GRID_HEIGHT = 20;
-        this.CELL_SIZE = 36; // 36x36像素的方块 (150%放大)
+        this.CELL_SIZE = 40; // 40x40像素的方块，确保游戏体验
         
         // 游戏状态
         this.gameState = 'stopped'; // stopped, playing, paused, gameOver
@@ -21,6 +226,13 @@ class NESTetris {
         
         // 音频系统
         this.audio = new NESTetrisAudio();
+        
+        // 高分记录系统
+        this.highScoreManager = new HighScoreManager();
+        this.gameTimer = new GameTimer();
+        
+        // 连击系统
+        this.comboSystem = new ComboSystem();
         
         // 时序系统 (60 FPS)
         this.frameCount = 0;
@@ -149,6 +361,8 @@ class NESTetris {
         this.lastPiece = null;
         this.rngState = 0;
         
+
+        
         // 初始化
         this.init();
     }
@@ -161,15 +375,18 @@ class NESTetris {
         this.nextCtx = this.nextCanvas.getContext('2d');
         
         // 设置Canvas尺寸以匹配游戏网格
-        this.canvas.width = this.GRID_WIDTH * this.CELL_SIZE;  // 10 * 36 = 360
-        this.canvas.height = this.GRID_HEIGHT * this.CELL_SIZE; // 20 * 36 = 720
+        this.canvas.width = this.GRID_WIDTH * this.CELL_SIZE;  // 10 * 40 = 400
+        this.canvas.height = 800; // 固定高度为800px
         
-        // 设置下一个方块Canvas尺寸 (4x4网格，每个方块27像素)
-        this.nextCanvas.width = 4 * (this.CELL_SIZE * 0.75);  // 4 * 27 = 108
-        this.nextCanvas.height = 4 * (this.CELL_SIZE * 0.75); // 4 * 27 = 108
+        // 设置下一个方块Canvas尺寸 (4x4网格，每个方块20像素)
+        this.nextCanvas.width = 4 * (this.CELL_SIZE * 0.5);   // 4 * 20 = 80
+        this.nextCanvas.height = 4 * (this.CELL_SIZE * 0.5);  // 4 * 20 = 80
         
         // 初始化游戏区域
         this.initPlayfield();
+        
+        // 初始化高分记录显示
+        this.highScoreManager.updateDisplay();
         
         // 绑定事件
         this.bindEvents();
@@ -338,9 +555,22 @@ class NESTetris {
         this.dasTimer = 0;
         this.areTimer = 0;
         
+        // 初始化游戏统计变量
+        this.piecesPlaced = 0;
+        this.tetrisCount = 0;
+        this.totalCombo = 0;
+        this.comboCount = 0;
+        this.gameStartTime = Date.now();
+        
+        // 重置连击系统
+        this.comboSystem.reset();
+        
         this.initPlayfield();
         this.nextPiece = this.generateNextPiece();
         this.spawnNewPiece();
+        
+        // 启动游戏计时器
+        this.gameTimer.start();
         
         // 启动背景音乐
         this.audio.resumeAudioContext();
@@ -352,9 +582,19 @@ class NESTetris {
         document.getElementById('gameOverlay').style.display = 'none';
     }
     
+    // 页面加载时自动开始游戏
+    autoStart() {
+        // 延迟一点时间确保页面完全加载
+        setTimeout(() => {
+            this.startGame();
+        }, 500);
+    }
+    
     togglePause() {
         if (this.gameState === 'playing') {
             this.gameState = 'paused';
+            // 暂停时重置连击
+            this.comboSystem.reset();
         } else if (this.gameState === 'paused') {
             this.gameState = 'playing';
         }
@@ -365,6 +605,10 @@ class NESTetris {
         this.score = 0;
         this.level = 0;
         this.linesClearedTotal = 0;
+        
+        // 重置连击系统
+        this.comboSystem.reset();
+        
         this.initPlayfield();
         this.currentPiece = null;
         this.nextPiece = null;
@@ -464,6 +708,9 @@ class NESTetris {
         
         const shape = this.currentPiece.type.rotations[this.currentPiece.rotation];
         
+        // 统计放置的方块数
+        let pieceBlocks = 0;
+        
         for (let y = 0; y < shape.length; y++) {
             for (let x = 0; x < shape[y].length; x++) {
                 if (shape[y][x]) {
@@ -472,10 +719,14 @@ class NESTetris {
                     
                     if (gridY >= 0) {
                         this.playfieldGrid[gridY][gridX] = this.currentPiece.type;
+                        pieceBlocks++;
                     }
                 }
             }
         }
+        
+        // 更新统计
+        this.piecesPlaced += pieceBlocks;
         
         // 播放锁定音效
         this.audio.playSFX('lock');
@@ -486,6 +737,7 @@ class NESTetris {
     
     clearLines() {
         let linesCleared = 0;
+        const eliminatedRows = []; // 记录消除的行位置
         
         for (let y = this.GRID_HEIGHT - 1; y >= 0; y--) {
             let lineFull = true;
@@ -497,6 +749,8 @@ class NESTetris {
             }
             
             if (lineFull) {
+                // 记录消除的行位置
+                eliminatedRows.push(y);
                 // 移除该行
                 this.playfieldGrid.splice(y, 1);
                 // 在顶部添加新行
@@ -508,7 +762,13 @@ class NESTetris {
         
         if (linesCleared > 0) {
             this.linesClearedTotal += linesCleared;
-            this.updateScore(linesCleared);
+            
+            // 统计Tetris次数（一次消除4行）
+            if (linesCleared === 4) {
+                this.tetrisCount++;
+            }
+            
+            this.updateScore(linesCleared, eliminatedRows);
             this.updateLevel();
             
             // 播放消行音效
@@ -516,13 +776,30 @@ class NESTetris {
         }
     }
     
-    updateScore(linesCleared) {
-        // NES得分公式
+    updateScore(linesCleared, eliminatedRows = []) {
+        const currentTime = Date.now();
+        
+        // 检查连击
+        const isCombo = this.comboSystem.checkCombo(currentTime);
+        
+        // 更新消除时间
+        this.comboSystem.updateClearTime(currentTime);
+        
+        // 统计连击数据
+        if (isCombo) {
+            this.totalCombo += this.comboSystem.comboCount;
+            this.comboCount++;
+        }
+        
+        // NES得分公式 + 连击倍数
         const baseScores = [0, 40, 100, 300, 1200];
         const baseScore = baseScores[linesCleared];
         const levelMultiplier = this.level + 1;
+        const comboMultiplier = this.comboSystem.getMultiplier();
         
-        this.score += baseScore * levelMultiplier;
+        // 最终得分
+        const finalScore = baseScore * levelMultiplier * comboMultiplier;
+        this.score += finalScore;
         
         // 软降得分
         if (this.keys.down) {
@@ -533,7 +810,22 @@ class NESTetris {
         if (this.score > 999999) {
             this.score = 999999;
         }
+        
+        // 触发连击特效
+        if (this.comboSystem.shouldTriggerEffect()) {
+            console.log(`触发${this.comboSystem.comboCount}连击特效`);
+            this.triggerComboEffects(this.comboSystem.comboCount);
+            this.comboSystem.markEffectTriggered();
+        }
+        
+        // 调试信息
+        const timerInfo = this.comboSystem.getTimerInfo(currentTime);
+        console.log(`消除${linesCleared}行，连击数${this.comboSystem.comboCount}，倍数x${comboMultiplier}，得分${finalScore}，剩余时间${timerInfo.remaining.toFixed(3)}秒，是否连击${isCombo}`);
     }
+    
+
+    
+
     
     updateLevel() {
         const newLevel = Math.floor(this.linesClearedTotal / 10);
@@ -546,6 +838,13 @@ class NESTetris {
     
     gameOver() {
         this.gameState = 'gameOver';
+        
+        // 重置连击系统
+        this.comboSystem.reset();
+        
+        // 计算游戏时长并保存高分记录
+        const gameDuration = this.gameTimer.end();
+        this.highScoreManager.addScore(this.score, this.level, this.linesClearedTotal, gameDuration);
         
         // 播放游戏结束音效
         this.audio.playSFX('gameover');
@@ -560,6 +859,9 @@ class NESTetris {
         document.getElementById('score').textContent = this.score.toString().padStart(6, '0');
         document.getElementById('level').textContent = this.level.toString();
         document.getElementById('lines').textContent = this.linesClearedTotal.toString();
+        
+        // 更新连击UI
+        this.updateComboUI();
     }
     
     render() {
@@ -648,9 +950,9 @@ class NESTetris {
         const shapeWidth = shape[0].length;
         const shapeHeight = shape.length;
         
-        // Next窗口是4x4网格，每个方块27像素
+        // Next窗口是4x4网格，每个方块20像素
         const nextWindowSize = 4;
-        const nextCellSize = this.CELL_SIZE * 0.75; // 27像素
+        const nextCellSize = this.CELL_SIZE * 0.5; // 20像素
         
         // 计算窗口中心点 (4x4网格的中心是(2, 2))
         const windowCenterX = 2;
@@ -1209,9 +1511,261 @@ class NESTetris {
         // 重置透明度
         this.ctx.globalAlpha = 1.0;
     }
+    
+    // 触发连击特效
+    triggerComboEffects(comboCount) {
+        // 显示连击文本
+        this.showComboText(comboCount);
+        
+        // 播放连击音效
+        this.playComboSound(comboCount);
+        
+        // 屏幕震动
+        this.screenShake(comboCount);
+        
+        // 粒子特效
+        this.createComboParticles(comboCount);
+    }
+    
+    // 显示连击文本
+    showComboText(comboCount) {
+        if (comboCount < 2) return;
+        
+        const comboText = `COMBO x${comboCount}!`;
+        const comboDisplay = document.getElementById('comboDisplay');
+        
+        if (comboDisplay && this.currentPiece) {
+            // 使用当前下落方块的中心位置
+            const pieceX = this.currentPiece.x;
+            const pieceY = this.currentPiece.y;
+            
+            // 获取方块形状
+            const shape = this.currentPiece.type.rotations[this.currentPiece.rotation];
+            const shapeWidth = shape[0].length;
+            const shapeHeight = shape.length;
+            
+            // 计算方块中心位置（像素坐标）
+            const centerX = (pieceX + shapeWidth / 2) * this.CELL_SIZE;
+            const centerY = (pieceY + shapeHeight / 2) * this.CELL_SIZE;
+            
+            // 设置位置
+            comboDisplay.style.left = centerX + 'px';
+            comboDisplay.style.top = centerY + 'px';
+            comboDisplay.style.transform = 'translate(-50%, -50%)';
+            
+            comboDisplay.textContent = comboText;
+            comboDisplay.classList.add('show');
+            
+            // 添加调试信息
+            console.log(`显示连击文本: ${comboText} 在方块中心位置 (${centerX}, ${centerY}), 方块位置(${pieceX}, ${pieceY}), 方块尺寸(${shapeWidth}x${shapeHeight})`);
+            
+            // 1秒后隐藏
+            setTimeout(() => {
+                comboDisplay.classList.remove('show');
+                console.log('连击文本已隐藏');
+            }, 1000);
+        } else {
+            console.log('comboDisplay元素未找到或没有当前方块');
+        }
+    }
+    
+    // 播放连击音效
+    playComboSound(comboCount) {
+        if (comboCount < 2) return;
+        
+        try {
+            // 连击音效配置（2-10连击独立音效，>10沿用10连击音效）
+            const comboSounds = {
+                2: { frequency: 440, duration: 0.2 },   // A4音
+                3: { frequency: 523, duration: 0.2 },   // C5音
+                4: { frequency: 659, duration: 0.3 },   // E5音
+                5: { frequency: 784, duration: 0.4 },   // G5音
+                6: { frequency: 880, duration: 0.4 },   // A5音
+                7: { frequency: 1047, duration: 0.5 },  // C6音
+                8: { frequency: 1319, duration: 0.5 },  // E6音
+                9: { frequency: 1568, duration: 0.6 },  // G6音
+                10: { frequency: 1760, duration: 0.6 }  // A6音
+            };
+            
+            // 获取音效配置，>10连击沿用10连击音效
+            let sound = comboSounds[comboCount];
+            if (!sound) {
+                sound = comboSounds[10];
+                console.log(`使用10连击音效配置: ${comboCount}连击`);
+            }
+            
+            // 检查音频上下文是否可用
+            if (!this.audio || !this.audio.audioContext) {
+                console.log('音频上下文不可用');
+                return;
+            }
+            
+            // 检查音频上下文状态
+            if (this.audio.audioContext.state === 'suspended') {
+                console.log('音频上下文已暂停，尝试恢复...');
+                this.audio.audioContext.resume();
+            }
+            
+            // 使用Web Audio API生成音效
+            const oscillator = this.audio.audioContext.createOscillator();
+            const gainNode = this.audio.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audio.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(sound.frequency, this.audio.audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.3, this.audio.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audio.audioContext.currentTime + sound.duration);
+            
+            oscillator.start(this.audio.audioContext.currentTime);
+            oscillator.stop(this.audio.audioContext.currentTime + sound.duration);
+            
+            console.log(`播放连击音效: ${comboCount}连击, 频率${sound.frequency}Hz, 时长${sound.duration}s`);
+        } catch (error) {
+            console.log('播放连击音效失败:', error);
+        }
+    }
+    
+    // 屏幕震动
+    screenShake(comboCount) {
+        const gameArea = document.querySelector('.game-area');
+        if (!gameArea) return;
+        
+        const intensity = Math.min(comboCount * 2, 10); // 最大震动10px
+        
+        gameArea.style.transform = `translate(${intensity}px, ${intensity}px)`;
+        
+        setTimeout(() => {
+            gameArea.style.transform = 'translate(0, 0)';
+        }, 100);
+    }
+    
+    // 创建粒子特效
+    createComboParticles(comboCount) {
+        const particleCount = Math.min(comboCount * 3, 15); // 最多15个粒子
+        const gameArea = document.querySelector('.game-area');
+        
+        if (!gameArea) {
+            console.log('gameArea元素未找到');
+            return;
+        }
+        
+        console.log(`创建${particleCount}个粒子特效`);
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'combo-particle';
+            
+            // 随机位置
+            const x = Math.random() * 400; // 游戏区域宽度
+            const y = Math.random() * 800; // 游戏区域高度
+            
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            
+            // 使用transform而不是CSS变量，提高兼容性
+            const angle = Math.random() * 360;
+            const distance = 50 + Math.random() * 100;
+            const dx = Math.cos(angle * Math.PI / 180) * distance;
+            const dy = Math.sin(angle * Math.PI / 180) * distance;
+            
+            particle.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            gameArea.appendChild(particle);
+            
+            // 1秒后移除粒子
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.remove();
+                }
+            }, 1000);
+        }
+    }
+    
+    // 更新连击UI
+    updateComboUI() {
+        // 更新连击显示
+        const comboElement = document.getElementById('combo');
+        if (comboElement) {
+            const comboMultiplier = this.comboSystem.getMultiplier();
+            comboElement.textContent = `x${comboMultiplier}`;
+            
+            // 添加连击激活效果（连击数≥2时）
+            if (this.comboSystem.comboCount >= 2) {
+                comboElement.classList.add('active');
+                // 10秒后移除激活效果（与连击窗口同步）
+                setTimeout(() => {
+                    comboElement.classList.remove('active');
+                }, 10000);
+            } else {
+                comboElement.classList.remove('active');
+            }
+        }
+        
+        // 更新倒计时显示
+        this.updateComboTimer();
+    }
+    
+    // 更新倒计时显示
+    updateComboTimer() {
+        const currentTime = Date.now();
+        const timerInfo = this.comboSystem.getTimerInfo(currentTime);
+        
+        const timerElement = document.getElementById('comboTimer');
+        
+        if (timerElement) {
+            // 监控透明度变化
+            const computedStyle = window.getComputedStyle(timerElement);
+            const currentOpacity = computedStyle.opacity;
+            
+            // 只有在连击激活且剩余时间大于0时才显示
+            if (timerInfo.active && timerInfo.remaining > 0) {
+                // 显示倒计时 - 从10.00开始显示
+                let displayTime = timerInfo.remaining;
+                
+                // 如果剩余时间大于10.00秒，显示10.00
+                if (displayTime > 10.00) {
+                    displayTime = 10.00;
+                }
+                
+                timerElement.textContent = displayTime.toFixed(2);
+                timerElement.classList.add('show');
+                
+                // 强制设置透明度为50%
+                timerElement.style.opacity = '0.5';
+                
+                // 固定颜色，不随时间变化
+                timerElement.style.color = 'var(--nes-light-green)';
+                
+
+                
+                // 检查透明度是否变化
+                setTimeout(() => {
+                    const newComputedStyle = window.getComputedStyle(timerElement);
+                    const newOpacity = newComputedStyle.opacity;
+                    if (newOpacity !== '0.5') {
+                        console.log(`透明度变化检测: ${currentOpacity} -> ${newOpacity}`);
+                    }
+                }, 100);
+                
+            } else {
+                // 倒计时结束或未激活时，立即隐藏
+                timerElement.classList.remove('show');
+                timerElement.textContent = '';
+                timerElement.style.color = 'var(--nes-light-green)';
+                timerElement.style.opacity = '0';
+            }
+        }
+    }
+    
+
 }
 
 // 初始化游戏
 document.addEventListener('DOMContentLoaded', () => {
-    new NESTetris();
+    const tetrisGame = new NESTetris();
+    // 自动开始游戏
+    tetrisGame.autoStart();
 });

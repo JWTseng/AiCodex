@@ -13,6 +13,10 @@
                 <div class="score-label">SCORE</div>
                 <div class="score-value" id="score">000000</div>
             </div>
+            <div class="combo-section">
+                <div class="combo-label">COMBO</div>
+                <div class="combo-value" id="combo">x1</div>
+            </div>
             <div class="level-section">
                 <div class="level-label">LEVEL</div>
                 <div class="level-value" id="level">0</div>
@@ -25,16 +29,18 @@
         
         <div class="game-main">
             <div class="game-area">
-                <canvas id="gameCanvas" width="360" height="720"></canvas>
+                <canvas id="gameCanvas" width="400" height="800"></canvas>
                 <div class="game-overlay" id="gameOverlay" style="display: none;">
                     <div class="game-over-text">GAME OVER</div>
                 </div>
+                <div id="comboDisplay" class="combo-display"></div>
+                <div id="comboTimer" class="combo-timer"></div>
             </div>
             
             <div class="game-sidebar">
                 <div class="next-piece-section">
                     <div class="next-label">NEXT</div>
-                    <canvas id="nextCanvas" width="108" height="108"></canvas>
+                    <canvas id="nextCanvas" width="80" height="80"></canvas>
                 </div>
                 
                 <div class="controls-section">
@@ -55,19 +61,14 @@
                         <span class="control-action">SOFT DROP</span>
                     </div>
                     <div class="control-item">
-                        <span class="control-key">Q/↑</span>
+                        <span class="control-key">Q/W</span>
                         <span class="control-separator">:</span>
-                        <span class="control-action">ROTATE CW</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">W</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">ROTATE CCW</span>
+                        <span class="control-action">ROTATE</span>
                     </div>
                     <div class="control-item">
                         <span class="control-key">Space</span>
                         <span class="control-separator">:</span>
-                        <span class="control-action">PAUSE/RESUME/START</span>
+                        <span class="control-action">START/PAUSE</span>
                     </div>
                     <div class="control-item">
                         <span class="control-key">R</span>
@@ -79,6 +80,24 @@
                         <span class="control-separator">:</span>
                         <span class="control-action">MUSIC TOGGLE</span>
                     </div>
+                </div>
+                
+                <div class="high-scores-section">
+                    <div class="high-scores-title">HIGH SCORES</div>
+                    <table class="high-scores-table">
+                        <thead>
+                            <tr>
+                                <th>RANK</th>
+                                <th>SCORE</th>
+                                <th>LEVEL</th>
+                                <th>LINES</th>
+                                <th>TIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="highScoresBody">
+                            <!-- 动态生成记录 -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
