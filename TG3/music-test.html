@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音乐开关测试</title>
+    <title>MUSIC TOGGLE TEST</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -180,22 +180,22 @@
 </head>
 <body>
     <div class="test-container">
-        <h1 class="title">🎵 音乐开关测试</h1>
+        <h1 class="title">🎵 MUSIC TOGGLE TEST</h1>
         
         <div class="test-section">
-            <h2 class="section-title">🎼 音乐控制</h2>
+            <h2 class="section-title">🎼 MUSIC CONTROL</h2>
             <div class="music-controls">
-                <button class="music-btn" onclick="playMusic('music1')">播放 Music 1</button>
-                <button class="music-btn" onclick="playMusic('music2')">播放 Music 2</button>
-                <button class="music-btn" onclick="playMusic('music3')">播放 Music 3</button>
-                <button class="music-btn" onclick="stopMusic()">停止音乐</button>
+                <button class="music-btn" onclick="playMusic('music1')">PLAY MUSIC 1</button>
+                <button class="music-btn" onclick="playMusic('music2')">PLAY MUSIC 2</button>
+                <button class="music-btn" onclick="playMusic('music3')">PLAY MUSIC 3</button>
+                <button class="music-btn" onclick="stopMusic()">STOP MUSIC</button>
             </div>
         </div>
         
         <div class="test-section">
-            <h2 class="section-title">🔊 音乐开关</h2>
+            <h2 class="section-title">🔊 MUSIC TOGGLE</h2>
             <div class="toggle-section">
-                <button class="toggle-btn" id="musicToggleBtn" onclick="toggleMusic()">音乐 OFF</button>
+                <button class="toggle-btn" id="musicToggleBtn" onclick="toggleMusic()">MUSIC OFF</button>
             </div>
         </div>
         
@@ -240,7 +240,7 @@
         function stopMusic() {
             if (audioManager) {
                 audioManager.stopMusic();
-                updateStatus('音乐已停止');
+                updateStatus('MUSIC STOPPED');
                 updateMusicButtons(null);
             }
         }
@@ -253,13 +253,13 @@
                 
                 const toggleBtn = document.getElementById('musicToggleBtn');
                 if (musicEnabled) {
-                    toggleBtn.textContent = '音乐 ON';
+                    toggleBtn.textContent = 'MUSIC ON';
                     toggleBtn.classList.add('music-on');
-                    updateStatus('音乐已开启');
+                    updateStatus('MUSIC ENABLED');
                 } else {
-                    toggleBtn.textContent = '音乐 OFF';
+                    toggleBtn.textContent = 'MUSIC OFF';
                     toggleBtn.classList.remove('music-on');
-                    updateStatus('音乐已关闭');
+                    updateStatus('MUSIC DISABLED');
                 }
             }
         }

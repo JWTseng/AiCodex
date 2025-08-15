@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>经典NES俄罗斯方块 - 启动页面</title>
+    <title>CLASSIC NES TETRIS - LAUNCHER</title>
     <style>
         * {
             margin: 0;
@@ -354,72 +354,72 @@
         </div>
         
         <div class="buttons">
-            <a href="index.html" class="btn btn-primary">开始游戏</a>
-            <a href="audio-test.html" class="btn">音频测试</a>
-            <a href="music-test.html" class="btn">音乐开关测试</a>
-            <a href="canvas-test.html" class="btn">Canvas测试</a>
-            <a href="test.html" class="btn">功能测试</a>
-            <a href="README.md" class="btn">查看说明</a>
+            <a href="index.html" class="btn btn-primary">START GAME</a>
+            <a href="audio-test.html" class="btn">AUDIO TEST</a>
+            <a href="music-test.html" class="btn">MUSIC TEST</a>
+            <a href="canvas-test.html" class="btn">CANVAS TEST</a>
+            <a href="test.html" class="btn">FUNCTION TEST</a>
+            <a href="README.md" class="btn">README</a>
         </div>
         
         <div class="audio-controls">
-            <div class="audio-title">🎵 音频设置</div>
+            <div class="audio-title">🎵 AUDIO SETTINGS</div>
             <div class="audio-control">
-                <label>主音量:</label>
+                <label>MASTER VOLUME:</label>
                 <input type="range" id="masterVolume" min="0" max="100" value="30" class="volume-slider">
                 <span id="masterVolumeValue">30%</span>
             </div>
             <div class="audio-control">
-                <label>音乐音量:</label>
+                <label>MUSIC VOLUME:</label>
                 <input type="range" id="musicVolume" min="0" max="100" value="30" class="volume-slider">
                 <span id="musicVolumeValue">30%</span>
             </div>
             <div class="audio-control">
-                <label>音效音量:</label>
+                <label>SFX VOLUME:</label>
                 <input type="range" id="sfxVolume" min="0" max="100" value="80" class="volume-slider">
                 <span id="sfxVolumeValue">80%</span>
             </div>
             <div class="audio-toggles">
                 <label class="toggle-label">
                     <input type="checkbox" id="musicToggle">
-                    <span class="toggle-text">音乐</span>
+                    <span class="toggle-text">MUSIC</span>
                 </label>
                 <label class="toggle-label">
                     <input type="checkbox" id="sfxToggle" checked>
-                    <span class="toggle-text">音效</span>
+                    <span class="toggle-text">SFX</span>
                 </label>
             </div>
         </div>
         
         <div class="controls-info">
-            <div class="controls-title">游戏控制</div>
+            <div class="controls-title">GAME CONTROLS</div>
             <div class="control-row">
                 <span class="control-key">← →</span>
-                <span class="control-action">左右移动</span>
+                <span class="control-action">MOVE LEFT/RIGHT</span>
             </div>
             <div class="control-row">
                 <span class="control-key">↓</span>
-                <span class="control-action">软降</span>
+                <span class="control-action">SOFT DROP</span>
             </div>
             <div class="control-row">
                 <span class="control-key">Enter</span>
-                <span class="control-action">开始游戏</span>
+                <span class="control-action">START GAME</span>
             </div>
             <div class="control-row">
                 <span class="control-key">A</span>
-                <span class="control-action">顺时针旋转</span>
+                <span class="control-action">ROTATE CW</span>
             </div>
             <div class="control-row">
                 <span class="control-key">B</span>
-                <span class="control-action">逆时针旋转</span>
+                <span class="control-action">ROTATE CCW</span>
             </div>
             <div class="control-row">
                 <span class="control-key">Space</span>
-                <span class="control-action">暂停/继续/开始</span>
+                <span class="control-action">PAUSE/RESUME/START</span>
             </div>
             <div class="control-row">
                 <span class="control-key">R</span>
-                <span class="control-action">重置游戏</span>
+                <span class="control-action">RESET GAME</span>
             </div>
         </div>
         
@@ -536,11 +536,11 @@
             const musicLabel = musicToggle.nextElementSibling;
             
             if (enabled) {
-                musicLabel.textContent = '音乐 ON';
+                musicLabel.textContent = 'MUSIC ON';
                 musicLabel.style.background = '#8bac0f';
                 musicLabel.style.color = '#0f380f';
             } else {
-                musicLabel.textContent = '音乐 OFF';
+                musicLabel.textContent = 'MUSIC OFF';
                 musicLabel.style.background = '#306230';
                 musicLabel.style.color = '#ffffff';
             }

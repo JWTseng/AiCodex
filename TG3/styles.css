@@ -132,7 +132,7 @@ body {
 
 .next-piece-section {
     background-color: var(--nes-black);
-    border: 2px solid var(--nes-light-green);
+    border: 2px solid var(--nes-light-green); /* 恢复外框可见 */
     border-radius: 4px;
     padding: 10px;
     text-align: center;
@@ -148,7 +148,7 @@ body {
 
 #nextCanvas {
     background-color: var(--nes-black);
-    border: 1px solid var(--nes-light-green);
+    border: 1px solid transparent; /* 透明度0% - 完全不可见 */
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
@@ -172,10 +172,31 @@ body {
 }
 
 .control-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 8px;
+    align-items: center;
     font-size: 12px;
     color: var(--nes-white);
     margin-bottom: 5px;
     padding: 2px 0;
+}
+
+.control-key {
+    text-align: right;
+    min-width: 60px;
+    font-weight: bold;
+}
+
+.control-separator {
+    text-align: center;
+    min-width: 10px;
+    color: var(--nes-yellow);
+}
+
+.control-action {
+    text-align: left;
+    color: var(--nes-white);
 }
 
 .game-footer {

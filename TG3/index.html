@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>经典NES俄罗斯方块</title>
+    <title>CLASSIC NES TETRIS</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -34,27 +34,59 @@
             <div class="game-sidebar">
                 <div class="next-piece-section">
                     <div class="next-label">NEXT</div>
-                    <canvas id="nextCanvas" width="144" height="144"></canvas>
+                    <canvas id="nextCanvas" width="108" height="108"></canvas>
                 </div>
                 
                 <div class="controls-section">
-                    <div class="controls-title">控制</div>
-                    <div class="control-item">Enter : 开始游戏</div>
-                    <div class="control-item">← → : 移动</div>
-                    <div class="control-item">↓ : 软降</div>
-                    <div class="control-item">Q/↑ : 顺时针旋转</div>
-                    <div class="control-item">W : 逆时针旋转</div>
-                    <div class="control-item">Space : 暂停/继续/开始</div>
-                    <div class="control-item">R : 重置</div>
-                    <div class="control-item">M : 音乐开关</div>
+                    <div class="controls-title">CONTROLS</div>
+                    <div class="control-item">
+                        <span class="control-key">Enter</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">START GAME</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">← →</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">MOVE</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">↓</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">SOFT DROP</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">Q/↑</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">ROTATE CW</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">W</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">ROTATE CCW</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">Space</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">PAUSE/RESUME/START</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">R</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">RESET</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="control-key">M</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">MUSIC TOGGLE</span>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="game-footer">
-            <button id="startBtn" class="game-btn">开始游戏</button>
-            <button id="pauseBtn" class="game-btn" disabled>暂停</button>
-            <button id="resetBtn" class="game-btn">重置</button>
+            <button id="startBtn" class="game-btn">START GAME</button>
+            <button id="pauseBtn" class="game-btn" disabled>PAUSE</button>
+            <button id="resetBtn" class="game-btn">RESET</button>
         </div>
         
     </div>

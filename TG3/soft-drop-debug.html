@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>软降速度调试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0f380f;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        .debug-container {
+            width: 1200px;
+            background-color: #306230;
+            border: 3px solid #8bac0f;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(139, 172, 15, 0.2);
+        }
+        
+        .debug-title {
+            text-align: center;
+            color: #9bbc0f;
+            font-size: 28px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(155, 188, 15, 0.5);
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 25px;
+            align-items: flex-start;
+        }
+        
+        /* 演示面板 - 40% 宽度 */
+        .demo-panel {
+            flex: 0 0 480px; /* 40% of 1200px */
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        
+        .demo-title {
+            color: #9bbc0f;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        
+        .demo-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .demo-button {
+            background-color: #306230;
+            color: #ffffff;
+            border: 2px solid #8bac0f;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .demo-button:hover {
+            background-color: #8bac0f;
+            color: #0f380f;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 172, 15, 0.3);
+        }
+        
+        .demo-status {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            background-color: #306230;
+            border: 1px solid #8bac0f;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .status-label {
+            color: #8bac0f;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        
+        .status-value {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .demo-canvas-container {
+            text-align: center;
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        #demoCanvas {
+            background-color: #0f380f;
+            border: 1px solid #8bac0f;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .demo-grid-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .grid-info-item {
+            background-color: #306230;
+            border: 1px solid #8bac0f;
+            border-radius: 4px;
+            padding: 8px;
+            color: #8bac0f;
+            font-size: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        /* 右侧面板 - 60% 宽度 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* 参数调整面板 - 30% 高度 */
+        .parameter-panel {
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+            flex: 0 0 auto;
+        }
+        
+        .panel-title {
+            color: #9bbc0f;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #8bac0f;
+            padding-bottom: 8px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .control-label {
+            min-width: 140px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .control-slider {
+            flex: 1;
+            background: #306230;
+            outline: none;
+            border-radius: 5px;
+            height: 6px;
+        }
+        
+        .control-slider::-webkit-slider-thumb {
+            background: #8bac0f;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .control-value {
+            min-width: 60px;
+            text-align: right;
+            color: #9bbc0f;
+            font-weight: bold;
+            font-size: 14px;
+            background-color: #306230;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #8bac0f;
+        }
+        
+        .reset-button {
+            background-color: #306230;
+            color: #ffffff;
+            border: 2px solid #8bac0f;
+            border-radius: 4px;
+            padding: 12px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .reset-button:hover {
+            background-color: #8bac0f;
+            color: #0f380f;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 172, 15, 0.3);
+        }
+        
+        /* 实时信息面板 - 25% 高度 */
+        .realtime-panel {
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+            flex: 0 0 auto;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .info-item {
+            background-color: #306230;
+            border: 1px solid #8bac0f;
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .info-label {
+            color: #8bac0f;
+            font-size: 11px;
+            margin-bottom: 6px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        /* 参数说明面板 - 20% 高度 */
+        .explanation-panel {
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+            flex: 0 0 auto;
+        }
+        
+        .parameter-explanation {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .param-item {
+            background-color: #306230;
+            border: 1px solid #8bac0f;
+            border-radius: 4px;
+            padding: 12px;
+        }
+        
+        .param-name {
+            color: #9bbc0f;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .param-desc {
+            color: #ffffff;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        /* 测试控制面板 - 25% 高度 */
+        .test-panel {
+            background-color: #0f380f;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        
+        .test-instruction {
+            color: #8bac0f;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            background-color: #306230;
+            color: #ffffff;
+            border: 2px solid #8bac0f;
+            border-radius: 4px;
+            padding: 10px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        .test-button:hover {
+            background-color: #8bac0f;
+            color: #0f380f;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 172, 15, 0.3);
+        }
+        
+        .log-area {
+            background-color: #0f380f;
+            border: 1px solid #8bac0f;
+            border-radius: 4px;
+            padding: 15px;
+            height: 180px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin-bottom: 6px;
+            padding: 2px 0;
+        }
+        
+        .log-time {
+            color: #8bac0f;
+            font-weight: bold;
+        }
+        
+        .log-info {
+            color: #ffffff;
+        }
+        
+        /* 滚动条样式 */
+        .log-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log-area::-webkit-scrollbar-track {
+            background: #0f380f;
+        }
+        
+        .log-area::-webkit-scrollbar-thumb {
+            background: #8bac0f;
+            border-radius: 4px;
+        }
+        
+        .log-area::-webkit-scrollbar-thumb:hover {
+            background: #9bbc0f;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="debug-title">软降速度调试工具</div>
+        
+        <div class="main-content">
+            <!-- 演示面板 (左侧 40%) -->
+            <div class="demo-panel">
+                <div class="demo-title">方块下落演示</div>
+                
+                <div class="demo-controls">
+                    <button class="demo-button" onclick="startDemo()">开始演示</button>
+                    <button class="demo-button" onclick="stopDemo()">停止演示</button>
+                    <button class="demo-button" onclick="resetDemo()">重置演示</button>
+                    <button class="demo-button" onclick="toggleSoftDrop()">切换软降</button>
+                </div>
+                
+                <div class="demo-status">
+                    <div class="status-item">
+                        <span class="status-label">状态</span>
+                        <span class="status-value" id="demoStatus">停止</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">模式</span>
+                        <span class="status-value" id="demoMode">正常重力</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">方块位置</span>
+                        <span class="status-value" id="blockPosition">5, 0</span>
+                    </div>
+                </div>
+                
+                <div class="demo-canvas-container">
+                    <canvas id="demoCanvas" width="240" height="480"></canvas>
+                    <div class="demo-grid-info">
+                        <div class="grid-info-item">网格: 10×20</div>
+                        <div class="grid-info-item">方块大小: 24px</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧面板 (60%) -->
+            <div class="right-panel">
+                <!-- 参数调整面板 -->
+                <div class="parameter-panel">
+                    <div class="panel-title">参数调整</div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">当前等级 (LEVEL)</div>
+                        <input type="range" id="levelSlider" class="control-slider" min="0" max="29" value="0">
+                        <div class="control-value" id="levelValue">0</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">加速度增长率</div>
+                        <input type="range" id="accelerationRateSlider" class="control-slider" min="0.1" max="5.0" step="0.1" value="2.4">
+                        <div class="control-value" id="accelerationRateValue">2.4</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">最大加速度</div>
+                        <input type="range" id="maxAccelerationSlider" class="control-slider" min="50" max="500" step="10" value="200">
+                        <div class="control-value" id="maxAccelerationValue">200</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">软降除数</div>
+                        <input type="range" id="softDropDivisorSlider" class="control-slider" min="5" max="20" step="1" value="10">
+                        <div class="control-value" id="softDropDivisorValue">10</div>
+                    </div>
+                    
+                    <button class="reset-button" onclick="resetParameters()">重置参数到默认值</button>
+                </div>
+                
+                <!-- 实时信息面板 -->
+                <div class="realtime-panel">
+                    <div class="panel-title">实时信息</div>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">正常重力帧数</div>
+                            <div class="info-value" id="gravityFrames">48</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">基础软降速度</div>
+                            <div class="info-value" id="baseSoftDropSpeed">4</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">当前加速度</div>
+                            <div class="info-value" id="currentAcceleration">0</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">总软降速度</div>
+                            <div class="info-value" id="totalSoftDropSpeed">4</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">速度倍数</div>
+                            <div class="info-value" id="speedMultiplier">12.0x</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">帧计数</div>
+                            <div class="info-value" id="frameCount">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 参数说明面板 -->
+                <div class="explanation-panel">
+                    <div class="panel-title">参数说明</div>
+                    <div class="parameter-explanation">
+                        <div class="param-item">
+                            <div class="param-name">当前等级 (LEVEL)</div>
+                            <div class="param-desc">游戏难度等级，决定基础重力速度。等级越高，正常重力越快。</div>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-name">加速度增长率</div>
+                            <div class="param-desc">每帧软降加速度的增加量。数值越大，软降加速越快。</div>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-name">最大加速度</div>
+                            <div class="param-desc">软降加速度的上限值，防止速度过快失去控制。</div>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-name">软降除数</div>
+                            <div class="param-desc">计算基础软降速度时的除数。数值越小，基础软降速度越快。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试控制面板 -->
+        <div class="test-panel">
+            <div class="panel-title">测试控制</div>
+            
+            <div class="test-instruction">
+                按住下箭头键测试软降加速度效果，观察实时数据变化
+            </div>
+            
+            <div class="test-controls">
+                <button class="test-button" onclick="resetTest()">重置测试</button>
+                <button class="test-button" onclick="clearLog()">清空日志</button>
+                <button class="test-button" onclick="clearRealTimeInfo()">清除实时信息</button>
+                <button class="test-button" onclick="exportData()">导出数据</button>
+            </div>
+            
+            <div class="log-area" id="logArea">
+                <div class="log-entry">
+                    <span class="log-time">[00:00]</span>
+                    <span class="log-info">调试工具已启动，开始测试软降速度...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 重力表 (每单元格帧数)
+        const gravityTable = [
+            48, 43, 38, 33, 28, 23, 18, 13, 8, 6,  // 0-9级
+            5, 5, 5, 4, 4, 4, 3, 3, 3, 2,          // 10-19级
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2,          // 20-29级
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1           // 30+级
+        ];
+
+        // 默认参数值
+        const defaultParams = {
+            level: 0,
+            accelerationRate: 2.4,
+            maxAcceleration: 200,
+            softDropDivisor: 10
+        };
+
+        // 调试状态
+        let debugState = {
+            level: defaultParams.level,
+            accelerationRate: defaultParams.accelerationRate,
+            maxAcceleration: defaultParams.maxAcceleration,
+            softDropDivisor: defaultParams.softDropDivisor,
+            softDropAcceleration: 0,
+            frameCount: 0,
+            isSoftDropping: false
+        };
+
+        // 演示状态
+        let demoState = {
+            isRunning: false,
+            isSoftDropMode: false,
+            blockX: 5,
+            blockY: 0,
+            gravityTimer: 0,
+            softDropAcceleration: 0,
+            animationId: null
+        };
+
+        // 演示方块定义
+        const demoBlock = {
+            color: '#80ffff',
+            size: 24,
+            gridWidth: 10,
+            gridHeight: 20
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateDisplay();
+            startUpdateLoop();
+            initDemo();
+        });
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 等级滑块
+            document.getElementById('levelSlider').addEventListener('input', function(e) {
+                debugState.level = parseInt(e.target.value);
+                document.getElementById('levelValue').textContent = debugState.level;
+                updateDisplay();
+                logEvent(`等级调整为: ${debugState.level}`);
+            });
+
+            // 加速度增长率滑块
+            document.getElementById('accelerationRateSlider').addEventListener('input', function(e) {
+                debugState.accelerationRate = parseFloat(e.target.value);
+                document.getElementById('accelerationRateValue').textContent = debugState.accelerationRate.toFixed(1);
+                updateDisplay();
+                logEvent(`加速度增长率调整为: ${debugState.accelerationRate}`);
+            });
+
+            // 最大加速度滑块
+            document.getElementById('maxAccelerationSlider').addEventListener('input', function(e) {
+                debugState.maxAcceleration = parseInt(e.target.value);
+                document.getElementById('maxAccelerationValue').textContent = debugState.maxAcceleration;
+                updateDisplay();
+                logEvent(`最大加速度调整为: ${debugState.maxAcceleration}`);
+            });
+
+            // 软降除数滑块
+            document.getElementById('softDropDivisorSlider').addEventListener('input', function(e) {
+                debugState.softDropDivisor = parseInt(e.target.value);
+                document.getElementById('softDropDivisorValue').textContent = debugState.softDropDivisor;
+                updateDisplay();
+                logEvent(`软降除数调整为: ${debugState.softDropDivisor}`);
+            });
+
+            // 键盘事件
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'ArrowDown') {
+                    debugState.isSoftDropping = true;
+                    logEvent('开始软降');
+                }
+            });
+
+            document.addEventListener('keyup', function(e) {
+                if (e.code === 'ArrowDown') {
+                    debugState.isSoftDropping = false;
+                    debugState.softDropAcceleration = 0;
+                    logEvent('停止软降，重置加速度');
+                }
+            });
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const gravityFrames = gravityTable[Math.min(debugState.level, gravityTable.length - 1)];
+            const levelBasedSoftDropSpeed = Math.max(2, Math.floor(gravityFrames / debugState.softDropDivisor));
+            const totalSoftDropSpeed = levelBasedSoftDropSpeed + debugState.softDropAcceleration;
+            const speedMultiplier = (gravityFrames / totalSoftDropSpeed).toFixed(1);
+
+            document.getElementById('gravityFrames').textContent = gravityFrames;
+            document.getElementById('baseSoftDropSpeed').textContent = levelBasedSoftDropSpeed;
+            document.getElementById('currentAcceleration').textContent = debugState.softDropAcceleration;
+            document.getElementById('totalSoftDropSpeed').textContent = totalSoftDropSpeed;
+            document.getElementById('speedMultiplier').textContent = speedMultiplier + 'x';
+            document.getElementById('frameCount').textContent = debugState.frameCount;
+        }
+
+        // 更新循环
+        function startUpdateLoop() {
+            setInterval(function() {
+                debugState.frameCount++;
+                
+                if (debugState.isSoftDropping) {
+                    // 增加加速度
+                    debugState.softDropAcceleration = Math.min(
+                        debugState.softDropAcceleration + debugState.accelerationRate, 
+                        debugState.maxAcceleration
+                    );
+                    
+                    // 每10帧记录一次日志
+                    if (debugState.frameCount % 10 === 0) {
+                        const gravityFrames = gravityTable[Math.min(debugState.level, gravityTable.length - 1)];
+                        const levelBasedSoftDropSpeed = Math.max(2, Math.floor(gravityFrames / debugState.softDropDivisor));
+                        const totalSoftDropSpeed = levelBasedSoftDropSpeed + debugState.softDropAcceleration;
+                        
+                        logEvent(`软降中 - 基础: ${levelBasedSoftDropSpeed}, 加速度: ${debugState.softDropAcceleration.toFixed(1)}, 总计: ${totalSoftDropSpeed.toFixed(1)}`);
+                    }
+                }
+                
+                updateDisplay();
+            }, 16); // 约60FPS
+        }
+
+        // 日志功能
+        function logEvent(message) {
+            const logArea = document.getElementById('logArea');
+            const now = new Date();
+            const timeString = `[${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">${timeString}</span> <span class="log-info">${message}</span>`;
+            
+            logArea.appendChild(logEntry);
+            logArea.scrollTop = logArea.scrollHeight;
+            
+            // 限制日志条目数量
+            while (logArea.children.length > 50) {
+                logArea.removeChild(logArea.firstChild);
+            }
+        }
+
+        // 重置测试
+        function resetTest() {
+            debugState.softDropAcceleration = 0;
+            debugState.frameCount = 0;
+            debugState.isSoftDropping = false;
+            logEvent('测试已重置');
+        }
+
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '';
+            logEvent('日志已清空');
+        }
+
+        // 导出数据
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                debugState: debugState,
+                gravityTable: gravityTable,
+                currentCalculations: {
+                    gravityFrames: gravityTable[Math.min(debugState.level, gravityTable.length - 1)],
+                    levelBasedSoftDropSpeed: Math.max(2, Math.floor(gravityTable[Math.min(debugState.level, gravityTable.length - 1)] / debugState.softDropDivisor)),
+                    totalSoftDropSpeed: Math.max(2, Math.floor(gravityTable[Math.min(debugState.level, gravityTable.length - 1)] / debugState.softDropDivisor)) + debugState.softDropAcceleration
+                }
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `soft-drop-debug-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            logEvent('数据已导出');
+        }
+
+        // 重置参数到默认值
+        function resetParameters() {
+            // 重置调试状态
+            debugState.level = defaultParams.level;
+            debugState.accelerationRate = defaultParams.accelerationRate;
+            debugState.maxAcceleration = defaultParams.maxAcceleration;
+            debugState.softDropDivisor = defaultParams.softDropDivisor;
+            debugState.softDropAcceleration = 0;
+            debugState.frameCount = 0;
+            debugState.isSoftDropping = false;
+            
+            // 重置滑块位置
+            document.getElementById('levelSlider').value = defaultParams.level;
+            document.getElementById('accelerationRateSlider').value = defaultParams.accelerationRate;
+            document.getElementById('maxAccelerationSlider').value = defaultParams.maxAcceleration;
+            document.getElementById('softDropDivisorSlider').value = defaultParams.softDropDivisor;
+            
+            // 更新显示值
+            document.getElementById('levelValue').textContent = defaultParams.level;
+            document.getElementById('accelerationRateValue').textContent = defaultParams.accelerationRate.toFixed(1);
+            document.getElementById('maxAccelerationValue').textContent = defaultParams.maxAcceleration;
+            document.getElementById('softDropDivisorValue').textContent = defaultParams.softDropDivisor;
+            
+            // 更新显示
+            updateDisplay();
+            
+            logEvent('参数已重置到默认值');
+        }
+
+        // 清除实时信息
+        function clearRealTimeInfo() {
+            // 重置实时数据
+            debugState.softDropAcceleration = 0;
+            debugState.frameCount = 0;
+            debugState.isSoftDropping = false;
+            
+            // 更新显示
+            updateDisplay();
+            
+            logEvent('实时信息已清除');
+        }
+
+        // 演示功能
+        function initDemo() {
+            const canvas = document.getElementById('demoCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制网格
+            drawGrid(ctx);
+            
+            // 绘制初始方块
+            drawBlock(ctx, demoState.blockX, demoState.blockY);
+            
+            updateDemoStatus();
+        }
+
+        function drawGrid(ctx) {
+            ctx.strokeStyle = '#306230';
+            ctx.lineWidth = 1;
+            
+            // 绘制垂直线
+            for (let x = 0; x <= demoBlock.gridWidth; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * demoBlock.size, 0);
+                ctx.lineTo(x * demoBlock.size, demoBlock.gridHeight * demoBlock.size);
+                ctx.stroke();
+            }
+            
+            // 绘制水平线
+            for (let y = 0; y <= demoBlock.gridHeight; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * demoBlock.size);
+                ctx.lineTo(demoBlock.gridWidth * demoBlock.size, y * demoBlock.size);
+                ctx.stroke();
+            }
+        }
+
+        function drawBlock(ctx, x, y) {
+            // 清除画布
+            ctx.fillStyle = '#0f380f';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            
+            // 重新绘制网格
+            drawGrid(ctx);
+            
+            // 绘制方块
+            ctx.fillStyle = demoBlock.color;
+            ctx.fillRect(x * demoBlock.size, y * demoBlock.size, demoBlock.size, demoBlock.size);
+            
+            // 绘制方块边框
+            ctx.strokeStyle = '#0f380f';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x * demoBlock.size, y * demoBlock.size, demoBlock.size, demoBlock.size);
+        }
+
+        function updateDemoStatus() {
+            document.getElementById('demoStatus').textContent = demoState.isRunning ? '运行中' : '停止';
+            document.getElementById('demoMode').textContent = demoState.isSoftDropMode ? '软降模式' : '正常重力';
+            document.getElementById('blockPosition').textContent = `${demoState.blockX}, ${demoState.blockY}`;
+        }
+
+        function startDemo() {
+            if (demoState.isRunning) return;
+            
+            demoState.isRunning = true;
+            demoState.gravityTimer = 0;
+            demoState.softDropAcceleration = 0;
+            
+            updateDemoStatus();
+            logEvent('演示已开始');
+            
+            demoState.animationId = requestAnimationFrame(demoLoop);
+        }
+
+        function stopDemo() {
+            if (!demoState.isRunning) return;
+            
+            demoState.isRunning = false;
+            if (demoState.animationId) {
+                cancelAnimationFrame(demoState.animationId);
+                demoState.animationId = null;
+            }
+            
+            updateDemoStatus();
+            logEvent('演示已停止');
+        }
+
+        function resetDemo() {
+            stopDemo();
+            demoState.blockX = 5;
+            demoState.blockY = 0;
+            demoState.gravityTimer = 0;
+            demoState.softDropAcceleration = 0;
+            demoState.isSoftDropMode = false;
+            
+            const canvas = document.getElementById('demoCanvas');
+            const ctx = canvas.getContext('2d');
+            drawBlock(ctx, demoState.blockX, demoState.blockY);
+            
+            updateDemoStatus();
+            logEvent('演示已重置');
+        }
+
+        function toggleSoftDrop() {
+            demoState.isSoftDropMode = !demoState.isSoftDropMode;
+            demoState.softDropAcceleration = 0;
+            
+            updateDemoStatus();
+            logEvent(`切换到${demoState.isSoftDropMode ? '软降' : '正常重力'}模式`);
+        }
+
+        function demoLoop() {
+            if (!demoState.isRunning) return;
+            
+            const gravityFrames = gravityTable[Math.min(debugState.level, gravityTable.length - 1)];
+            
+            if (demoState.isSoftDropMode) {
+                // 软降模式
+                demoState.softDropAcceleration = Math.min(
+                    demoState.softDropAcceleration + debugState.accelerationRate, 
+                    debugState.maxAcceleration
+                );
+                
+                const levelBasedSoftDropSpeed = Math.max(2, Math.floor(gravityFrames / debugState.softDropDivisor));
+                const currentSoftDropSpeed = levelBasedSoftDropSpeed + demoState.softDropAcceleration;
+                
+                demoState.gravityTimer += currentSoftDropSpeed;
+            } else {
+                // 正常重力模式
+                demoState.gravityTimer += 1;
+            }
+            
+            // 检查是否需要下落
+            if (demoState.gravityTimer >= gravityFrames) {
+                demoState.blockY++;
+                demoState.gravityTimer = 0;
+                
+                // 检查是否到达底部
+                if (demoState.blockY >= demoBlock.gridHeight) {
+                    demoState.blockY = 0; // 重置到顶部
+                    logEvent('方块到达底部，重置到顶部');
+                }
+            }
+            
+            // 绘制方块
+            const canvas = document.getElementById('demoCanvas');
+            const ctx = canvas.getContext('2d');
+            drawBlock(ctx, demoState.blockX, demoState.blockY);
+            
+            updateDemoStatus();
+            
+            // 继续动画循环
+            demoState.animationId = requestAnimationFrame(demoLoop);
+        }
+    </script>
+</body>
+</html>

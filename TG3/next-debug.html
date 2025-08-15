@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next窗口方块位置调试面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f380f 0%, #306230 50%, #8bac0f 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .preview-section {
+            background: rgba(15, 56, 15, 0.9);
+            border: 4px solid #8bac0f;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .preview-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #9bbc0f;
+            margin-bottom: 20px;
+        }
+        
+        .next-window {
+            display: inline-block;
+            position: relative;
+            background: #0f380f;
+            border: 3px solid #8bac0f;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .next-label {
+            color: #9bbc0f;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .next-canvas-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        #nextCanvas {
+            border: 2px solid #8bac0f;
+            background: #0f380f;
+        }
+        
+        .center-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .crosshair-line {
+            position: absolute;
+            background: rgba(0, 255, 255, 0.8);
+        }
+        
+        .crosshair-vertical {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .crosshair-horizontal {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .controls-section {
+            background: rgba(15, 56, 15, 0.9);
+            border: 4px solid #8bac0f;
+            border-radius: 12px;
+            padding: 30px;
+        }
+        
+        .controls-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #9bbc0f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .piece-controls {
+            margin-bottom: 30px;
+        }
+        
+        .piece-title {
+            font-size: 1.2em;
+            color: #8bac0f;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(139, 172, 15, 0.2);
+            border-radius: 6px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(48, 98, 48, 0.3);
+            border-radius: 6px;
+        }
+        
+        .control-label {
+            min-width: 80px;
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        
+        .control-slider {
+            flex: 1;
+            margin: 0 15px;
+            height: 6px;
+            background: #306230;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #8bac0f;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #9bbc0f;
+        }
+        
+        .control-value {
+            min-width: 60px;
+            color: #9bbc0f;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .action-btn {
+            background: #306230;
+            color: #ffffff;
+            border: 2px solid #8bac0f;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            background: #8bac0f;
+            color: #0f380f;
+            transform: translateY(-2px);
+        }
+        
+        .action-btn.primary {
+            background: #8bac0f;
+            color: #0f380f;
+        }
+        
+        .action-btn.primary:hover {
+            background: #9bbc0f;
+        }
+        
+        .current-values {
+            background: rgba(48, 98, 48, 0.5);
+            border: 2px solid #8bac0f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .current-values h3 {
+            color: #9bbc0f;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .value-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: rgba(15, 56, 15, 0.5);
+            border-radius: 4px;
+        }
+        
+        .value-label {
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        
+        .value-number {
+            color: #9bbc0f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="preview-section">
+            <div class="preview-title">🎯 Next窗口预览</div>
+            <div class="next-window">
+                <div class="next-label">NEXT</div>
+                <div class="next-canvas-container">
+                    <canvas id="nextCanvas" width="108" height="108"></canvas>
+                    <div class="center-crosshair">
+                        <div class="crosshair-line crosshair-vertical"></div>
+                        <div class="crosshair-line crosshair-horizontal"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls-section">
+            <div class="controls-title">⚙️ 位置调试控制</div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">I方块 (4×1)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="I-X" class="control-slider" min="-2" max="2" step="0.1" value="0">
+                    <span class="control-value" id="I-X-value">0.0</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="I-Y" class="control-slider" min="-2" max="2" step="0.1" value="1.5">
+                    <span class="control-value" id="I-Y-value">1.5</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">O方块 (2×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="O-X" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="O-X-value">1.0</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="O-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="O-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">T方块 (3×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="T-X" class="control-slider" min="-2" max="2" step="0.1" value="0.5">
+                    <span class="control-value" id="T-X-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="T-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="T-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">S方块 (3×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="S-X" class="control-slider" min="-2" max="2" step="0.1" value="0.5">
+                    <span class="control-value" id="S-X-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="S-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="S-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">Z方块 (3×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="Z-X" class="control-slider" min="-2" max="2" step="0.1" value="0.5">
+                    <span class="control-value" id="Z-X-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="Z-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="Z-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">J方块 (3×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="J-X" class="control-slider" min="-2" max="2" step="0.1" value="0.5">
+                    <span class="control-value" id="J-X-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="J-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="J-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="piece-controls">
+                <div class="piece-title">L方块 (3×2)</div>
+                <div class="control-group">
+                    <span class="control-label">X偏移:</span>
+                    <input type="range" id="L-X" class="control-slider" min="-2" max="2" step="0.1" value="0.5">
+                    <span class="control-value" id="L-X-value">0.5</span>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Y偏移:</span>
+                    <input type="range" id="L-Y" class="control-slider" min="-2" max="2" step="0.1" value="1">
+                    <span class="control-value" id="L-Y-value">1.0</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn" id="prevBtn">上一个</button>
+                <button class="action-btn" id="nextBtn">下一个</button>
+                <button class="action-btn" id="showAllBtn">显示所有</button>
+                <button class="action-btn primary" id="applyBtn">应用数值</button>
+                <button class="action-btn" id="resetBtn">重置</button>
+            </div>
+            
+            <div class="current-values">
+                <h3>📊 当前数值</h3>
+                <div class="values-grid" id="valuesGrid">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 方块定义
+        const pieces = {
+            I: {
+                name: 'I',
+                color: '#80ffff',
+                rotations: [[[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]]],
+                currentOffset: { x: 0, y: 1.5 }
+            },
+            O: {
+                name: 'O',
+                color: '#ffff80',
+                rotations: [[[1,1], [1,1]]],
+                currentOffset: { x: 1, y: 1 }
+            },
+            T: {
+                name: 'T',
+                color: '#c080c0',
+                rotations: [[[0,1,0], [1,1,1], [0,0,0]]],
+                currentOffset: { x: 0.5, y: 1 }
+            },
+            S: {
+                name: 'S',
+                color: '#80ff80',
+                rotations: [[[0,1,1], [1,1,0], [0,0,0]]],
+                currentOffset: { x: 0.5, y: 1 }
+            },
+            Z: {
+                name: 'Z',
+                color: '#ff8080',
+                rotations: [[[1,1,0], [0,1,1], [0,0,0]]],
+                currentOffset: { x: 0.5, y: 1 }
+            },
+            J: {
+                name: 'J',
+                color: '#8080ff',
+                rotations: [[[1,0,0], [1,1,1], [0,0,0]]],
+                currentOffset: { x: 0.5, y: 1 }
+            },
+            L: {
+                name: 'L',
+                color: '#ffc080',
+                rotations: [[[0,0,1], [1,1,1], [0,0,0]]],
+                currentOffset: { x: 0.5, y: 1 }
+            }
+        };
+        
+                 const pieceNames = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+         let currentPieceIndex = 0;
+         let currentPiece = pieces[pieceNames[currentPieceIndex]];
+         let showAllPieces = false;
+        
+        const canvas = document.getElementById('nextCanvas');
+        const ctx = canvas.getContext('2d');
+        const cellSize = 27; // 27像素
+        
+                 // 初始化
+         function init() {
+             setupEventListeners();
+             updateSliders();
+             renderPiece();
+             updateValuesGrid();
+             updateCurrentPieceTitle();
+         }
+        
+                 // 设置事件监听器
+         function setupEventListeners() {
+             // 滑块事件 - 实时联动
+             document.querySelectorAll('.control-slider').forEach(slider => {
+                 slider.addEventListener('input', (e) => {
+                     const pieceName = e.target.id.split('-')[0];
+                     const axis = e.target.id.split('-')[1];
+                     const value = parseFloat(e.target.value);
+                     
+                     // 更新方块偏移值
+                     pieces[pieceName].currentOffset[axis] = value;
+                     
+                     // 更新显示数值
+                     document.getElementById(`${pieceName}-${axis}-value`).textContent = value.toFixed(1);
+                     
+                     // 自动切换到正在调整的方块
+                     if (currentPiece.name !== pieceName) {
+                         currentPieceIndex = pieceNames.indexOf(pieceName);
+                         currentPiece = pieces[pieceName];
+                     }
+                     
+                     // 实时更新预览窗口
+                     renderPiece();
+                     
+                     // 实时更新数值网格
+                     updateValuesGrid();
+                     
+                     // 实时更新当前显示方块的标题
+                     updateCurrentPieceTitle();
+                 });
+             });
+            
+            // 按钮事件
+                         document.getElementById('prevBtn').addEventListener('click', () => {
+                 currentPieceIndex = (currentPieceIndex - 1 + pieceNames.length) % pieceNames.length;
+                 currentPiece = pieces[pieceNames[currentPieceIndex]];
+                 renderPiece();
+                 updateCurrentPieceTitle();
+             });
+             
+             document.getElementById('nextBtn').addEventListener('click', () => {
+                 currentPieceIndex = (currentPieceIndex + 1) % pieceNames.length;
+                 currentPiece = pieces[pieceNames[currentPieceIndex]];
+                 renderPiece();
+                 updateCurrentPieceTitle();
+             });
+            
+            document.getElementById('applyBtn').addEventListener('click', () => {
+                applyValues();
+            });
+            
+                         document.getElementById('resetBtn').addEventListener('click', () => {
+                 resetValues();
+             });
+             
+             document.getElementById('showAllBtn').addEventListener('click', () => {
+                 showAllPieces = !showAllPieces;
+                 const btn = document.getElementById('showAllBtn');
+                 btn.textContent = showAllPieces ? '显示单个' : '显示所有';
+                 btn.style.background = showAllPieces ? '#9bbc0f' : '#306230';
+                 renderPiece();
+             });
+        }
+        
+        // 更新滑块
+        function updateSliders() {
+            pieceNames.forEach(name => {
+                const piece = pieces[name];
+                document.getElementById(`${name}-X`).value = piece.currentOffset.x;
+                document.getElementById(`${name}-Y`).value = piece.currentOffset.y;
+                document.getElementById(`${name}-X-value`).textContent = piece.currentOffset.x.toFixed(1);
+                document.getElementById(`${name}-Y-value`).textContent = piece.currentOffset.y.toFixed(1);
+            });
+        }
+        
+                 // 渲染方块
+         function renderPiece() {
+             // 清空画布
+             ctx.fillStyle = '#0f380f';
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+             
+             if (showAllPieces) {
+                 // 显示所有方块（用于对比）
+                 renderAllPieces();
+             } else {
+                 // 显示当前选中的方块
+                 const shape = currentPiece.rotations[0];
+                 const offsetX = currentPiece.currentOffset.x;
+                 const offsetY = currentPiece.currentOffset.y;
+                 
+                 // 渲染方块
+                 for (let y = 0; y < shape.length; y++) {
+                     for (let x = 0; x < shape[y].length; x++) {
+                         if (shape[y][x]) {
+                             const renderX = (offsetX + x) * cellSize;
+                             const renderY = (offsetY + y) * cellSize;
+                             
+                             ctx.fillStyle = currentPiece.color;
+                             ctx.fillRect(renderX, renderY, cellSize, cellSize);
+                             
+                             // 绘制边框
+                             ctx.strokeStyle = '#0f380f';
+                             ctx.lineWidth = 1;
+                             ctx.strokeRect(renderX, renderY, cellSize, cellSize);
+                             
+                             // 调试信息：在控制台输出渲染位置
+                             console.log(`${currentPiece.name}方块渲染位置: (${renderX}, ${renderY}), 偏移: (${offsetX}, ${offsetY})`);
+                         }
+                     }
+                 }
+             }
+         }
+         
+         // 渲染所有方块（用于对比）
+         function renderAllPieces() {
+             const gridSize = 3; // 3x3网格显示所有方块
+             const spacing = 2; // 方块间距
+             
+             pieceNames.forEach((name, index) => {
+                 const piece = pieces[name];
+                 const shape = piece.rotations[0];
+                 const offsetX = piece.currentOffset.x;
+                 const offsetY = piece.currentOffset.y;
+                 
+                 // 计算网格位置
+                 const gridX = index % gridSize;
+                 const gridY = Math.floor(index / gridSize);
+                 const startX = gridX * (4 * cellSize + spacing);
+                 const startY = gridY * (4 * cellSize + spacing);
+                 
+                 // 渲染方块
+                 for (let y = 0; y < shape.length; y++) {
+                     for (let x = 0; x < shape[y].length; x++) {
+                         if (shape[y][x]) {
+                             ctx.fillStyle = piece.color;
+                             ctx.fillRect(
+                                 startX + (offsetX + x) * cellSize,
+                                 startY + (offsetY + y) * cellSize,
+                                 cellSize,
+                                 cellSize
+                             );
+                             
+                             // 绘制边框
+                             ctx.strokeStyle = '#0f380f';
+                             ctx.lineWidth = 1;
+                             ctx.strokeRect(
+                                 startX + (offsetX + x) * cellSize,
+                                 startY + (offsetY + y) * cellSize,
+                                 cellSize,
+                                 cellSize
+                             );
+                         }
+                     }
+                 }
+             });
+         }
+        
+                 // 更新当前方块标题
+         function updateCurrentPieceTitle() {
+             const title = document.querySelector('.preview-title');
+             if (showAllPieces) {
+                 title.textContent = '🎯 Next窗口预览 (所有方块)';
+             } else {
+                 title.textContent = `🎯 Next窗口预览 (${currentPiece.name}方块)`;
+             }
+         }
+         
+         // 更新数值网格
+         function updateValuesGrid() {
+            const grid = document.getElementById('valuesGrid');
+            grid.innerHTML = '';
+            
+            pieceNames.forEach(name => {
+                const piece = pieces[name];
+                const item = document.createElement('div');
+                item.className = 'value-item';
+                item.innerHTML = `
+                    <span class="value-label">${name}:</span>
+                    <span class="value-number">(${piece.currentOffset.x.toFixed(1)}, ${piece.currentOffset.y.toFixed(1)})</span>
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        // 应用数值
+        function applyValues() {
+            console.log('=== Next窗口方块位置数值 ===');
+            pieceNames.forEach(name => {
+                const piece = pieces[name];
+                console.log(`${name}: { x: ${piece.currentOffset.x}, y: ${piece.currentOffset.y} }`);
+            });
+            console.log('=== 复制以上数值到tetris.js ===');
+            
+            // 显示成功消息
+            alert('数值已输出到控制台，请复制到tetris.js中！');
+        }
+        
+        // 重置数值
+        function resetValues() {
+            pieceNames.forEach(name => {
+                pieces[name].currentOffset = { x: 0, y: 0 };
+            });
+            updateSliders();
+            renderPiece();
+            updateValuesGrid();
+        }
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

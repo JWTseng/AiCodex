@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES俄罗斯方块 - 功能测试</title>
+    <title>NES TETRIS - FUNCTION TEST</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -60,60 +60,60 @@
 </head>
 <body>
     <div class="test-container">
-        <h1>NES俄罗斯方块 - 功能测试</h1>
+        <h1>NES TETRIS - FUNCTION TEST</h1>
         
         <div class="test-section">
-            <div class="test-title">🎮 游戏启动测试</div>
+            <div class="test-title">🎮 GAME START TEST</div>
             <div class="test-item">
-                <button onclick="testGameStart()">测试游戏启动</button>
-                <span id="startTest">未测试</span>
+                <button onclick="testGameStart()">TEST GAME START</button>
+                <span id="startTest">NOT TESTED</span>
             </div>
             <div class="test-item">
-                <button onclick="testGameReset()">测试游戏重置</button>
-                <span id="resetTest">未测试</span>
+                <button onclick="testGameReset()">TEST GAME RESET</button>
+                <span id="resetTest">NOT TESTED</span>
             </div>
         </div>
         
         <div class="test-section">
-            <div class="test-title">🎯 核心机制测试</div>
+            <div class="test-title">🎯 CORE MECHANICS TEST</div>
             <div class="test-item">
-                <button onclick="testGravity()">测试重力系统</button>
-                <span id="gravityTest">未测试</span>
+                <button onclick="testGravity()">TEST GRAVITY SYSTEM</button>
+                <span id="gravityTest">NOT TESTED</span>
             </div>
             <div class="test-item">
-                <button onclick="testRotation()">测试旋转系统</button>
-                <span id="rotationTest">未测试</span>
+                <button onclick="testRotation()">TEST ROTATION SYSTEM</button>
+                <span id="rotationTest">NOT TESTED</span>
             </div>
             <div class="test-item">
-                <button onclick="testScoring()">测试得分系统</button>
-                <span id="scoringTest">未测试</span>
-            </div>
-        </div>
-        
-        <div class="test-section">
-            <div class="test-title">🎨 视觉渲染测试</div>
-            <div class="test-item">
-                <button onclick="testCanvas()">测试Canvas渲染</button>
-                <span id="canvasTest">未测试</span>
-            </div>
-            <div class="test-item">
-                <button onclick="testColors()">测试颜色系统</button>
-                <span id="colorsTest">未测试</span>
+                <button onclick="testScoring()">TEST SCORING SYSTEM</button>
+                <span id="scoringTest">NOT TESTED</span>
             </div>
         </div>
         
         <div class="test-section">
-            <div class="test-title">⚡ 性能测试</div>
+            <div class="test-title">🎨 VISUAL RENDERING TEST</div>
             <div class="test-item">
-                <button onclick="testPerformance()">测试游戏性能</button>
-                <span id="performanceTest">未测试</span>
+                <button onclick="testCanvas()">TEST CANVAS RENDERING</button>
+                <span id="canvasTest">NOT TESTED</span>
+            </div>
+            <div class="test-item">
+                <button onclick="testColors()">TEST COLOR SYSTEM</button>
+                <span id="colorsTest">NOT TESTED</span>
             </div>
         </div>
         
         <div class="test-section">
-            <div class="test-title">📊 测试结果</div>
+            <div class="test-title">⚡ PERFORMANCE TEST</div>
+            <div class="test-item">
+                <button onclick="testPerformance()">TEST GAME PERFORMANCE</button>
+                <span id="performanceTest">NOT TESTED</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">📊 TEST RESULTS</div>
             <div id="testResults">
-                <div class="test-item info">点击上方按钮开始测试各项功能</div>
+                <div class="test-item info">CLICK BUTTONS ABOVE TO START TESTING FUNCTIONS</div>
             </div>
         </div>
         
@@ -167,7 +167,7 @@
             try {
                 // 模拟游戏启动测试
                 setTimeout(() => {
-                    updateTestResult('startTest', true, '游戏启动功能正常');
+                    updateTestResult('startTest', true, 'GAME START FUNCTION NORMAL');
                 }, 1000);
             } catch (error) {
                 updateTestResult('startTest', false, '游戏启动失败: ' + error.message);
@@ -178,10 +178,10 @@
             try {
                 // 模拟游戏重置测试
                 setTimeout(() => {
-                    updateTestResult('resetTest', true, '游戏重置功能正常');
+                    updateTestResult('resetTest', true, 'GAME RESET FUNCTION NORMAL');
                 }, 500);
             } catch (error) {
-                updateTestResult('resetTest', false, '游戏重置失败: ' + error.message);
+                updateTestResult('resetTest', false, 'GAME RESET FAILED: ' + error.message);
             }
         }
         
@@ -204,12 +204,12 @@
                 // 模拟旋转系统测试
                 const pieces = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
                 if (pieces.length === 7) {
-                    updateTestResult('rotationTest', true, '七种方块旋转系统正常');
+                    updateTestResult('rotationTest', true, 'SEVEN PIECE ROTATION SYSTEM NORMAL');
                 } else {
-                    updateTestResult('rotationTest', false, '方块旋转系统错误');
+                    updateTestResult('rotationTest', false, 'PIECE ROTATION SYSTEM ERROR');
                 }
             } catch (error) {
-                updateTestResult('rotationTest', false, '旋转系统测试失败: ' + error.message);
+                updateTestResult('rotationTest', false, 'ROTATION SYSTEM TEST FAILED: ' + error.message);
             }
         }
         

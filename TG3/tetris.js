@@ -37,8 +37,8 @@ class NESTetris {
         
         // 线性加速系统
         this.softDropAcceleration = 0; // 软降加速度
-        this.accelerationRate = 1.2;   // 加速度增长率（每帧）
-        this.maxAcceleration = 100;    // 最大加速度
+        this.accelerationRate = 2.4;   // 加速度增长率（每帧）- 提高一倍
+        this.maxAcceleration = 200;    // 最大加速度 - 提高一倍
         this.baseSoftDropSpeed = 2;    // 基础软降速度倍数
         
         // 输入状态
@@ -164,9 +164,9 @@ class NESTetris {
         this.canvas.width = this.GRID_WIDTH * this.CELL_SIZE;  // 10 * 36 = 360
         this.canvas.height = this.GRID_HEIGHT * this.CELL_SIZE; // 20 * 36 = 720
         
-        // 设置下一个方块Canvas尺寸 (4x4网格，每个方块36像素)
-        this.nextCanvas.width = 4 * this.CELL_SIZE;  // 4 * 36 = 144
-        this.nextCanvas.height = 4 * this.CELL_SIZE; // 4 * 36 = 144
+        // 设置下一个方块Canvas尺寸 (4x4网格，每个方块27像素)
+        this.nextCanvas.width = 4 * (this.CELL_SIZE * 0.75);  // 4 * 27 = 108
+        this.nextCanvas.height = 4 * (this.CELL_SIZE * 0.75); // 4 * 27 = 108
         
         // 初始化游戏区域
         this.initPlayfield();
@@ -643,40 +643,47 @@ class NESTetris {
         this.nextCtx.fillStyle = '#0f380f';
         this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
         
-        // 下一个方块预览使用较小的尺寸
-                        const nextCellSize = this.CELL_SIZE / 2; // 18像素
+        // 获取方块形状和尺寸
+        const shape = this.nextPiece.rotations[0];
+        const shapeWidth = shape[0].length;
+        const shapeHeight = shape.length;
         
-        // 创建临时piece对象用于渲染
-        const tempPiece = {
-            type: this.nextPiece,
-            x: 1,
-            y: 1,
-            rotation: 0
-        };
+        // Next窗口是4x4网格，每个方块27像素
+        const nextWindowSize = 4;
+        const nextCellSize = this.CELL_SIZE * 0.75; // 27像素
         
-        // 手动渲染下一个方块，使用较小的尺寸
-        const shape = tempPiece.type.rotations[tempPiece.rotation];
+        // 计算窗口中心点 (4x4网格的中心是(2, 2))
+        const windowCenterX = 2;
+        const windowCenterY = 2;
         
+        // 计算方块中心点
+        const pieceCenterX = shapeWidth / 2;
+        const pieceCenterY = shapeHeight / 2;
+        
+        // 计算偏移量：窗口中心 - 方块中心
+        const offsetX = windowCenterX - pieceCenterX;
+        const offsetY = windowCenterY - pieceCenterY;
+        
+        // 渲染方块
         for (let y = 0; y < shape.length; y++) {
             for (let x = 0; x < shape[y].length; x++) {
                 if (shape[y][x]) {
-                    this.nextCtx.fillStyle = tempPiece.type.color;
-                    this.nextCtx.fillRect(
-                        (tempPiece.x + x) * nextCellSize,
-                        (tempPiece.y + y) * nextCellSize,
-                        nextCellSize,
-                        nextCellSize
-                    );
+                    const renderX = (offsetX + x) * nextCellSize;
+                    const renderY = (offsetY + y) * nextCellSize;
                     
-                    // 绘制边框
+                    // 填充方块 - 恢复可见
+                    this.nextCtx.fillStyle = this.nextPiece.color;
+                    this.nextCtx.fillRect(renderX, renderY, nextCellSize, nextCellSize);
+                    
+                    // 绘制边框 - 不透明度100%（清晰可见）
                     this.nextCtx.strokeStyle = '#0f380f';
                     this.nextCtx.lineWidth = 1;
-                    this.nextCtx.strokeRect(
-                        (tempPiece.x + x) * nextCellSize,
-                        (tempPiece.y + y) * nextCellSize,
-                        nextCellSize,
-                        nextCellSize
-                    );
+                    this.nextCtx.globalAlpha = 1.0; // 设置不透明度为100%（完全清晰）
+                    this.nextCtx.strokeRect(renderX, renderY, nextCellSize, nextCellSize);
+                    this.nextCtx.globalAlpha = 1.0; // 重置透明度
+                    
+                    // 调试信息：在控制台输出渲染位置
+                    console.log(`${this.nextPiece.name}方块渲染位置: (${renderX}, ${renderY}), 偏移: (${offsetX}, ${offsetY}), 方块中心: (${pieceCenterX}, ${pieceCenterY})`);
                 }
             }
         }
@@ -737,8 +744,11 @@ class NESTetris {
             // 增加加速度
             this.softDropAcceleration = Math.min(this.softDropAcceleration + this.accelerationRate, this.maxAcceleration);
             
+            // 计算基于等级的基础软降速度
+            const levelBasedSoftDropSpeed = Math.max(2, Math.floor(gravityFrames / 10));
+            
             // 计算当前软降速度
-            const currentSoftDropSpeed = this.baseSoftDropSpeed + this.softDropAcceleration;
+            const currentSoftDropSpeed = levelBasedSoftDropSpeed + this.softDropAcceleration;
             
             // 应用软降速度
             this.gravityTimer += currentSoftDropSpeed;
