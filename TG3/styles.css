@@ -514,6 +514,13 @@ body {
     border-bottom: 1px solid #8bac0f;
     padding-bottom: 10px;
     flex: 0 0 auto;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    user-select: none;
+}
+
+.high-scores-title:hover {
+    color: var(--nes-light-green);
 }
 
 .high-scores-table {
