@@ -223,8 +223,9 @@ body {
     align-items: center;
     font-size: 13px;
     color: var(--nes-white);
-    margin-bottom: 4px;
-    padding: 1.5px 0;
+    margin-bottom: 2px; /* 原4px 缩小约50% */
+    padding: 0.8px 0;   /* 原1.5px 缩小约47% */
+    line-height: 1.0;   /* 增加行距控制，整体约 -20% */
 }
 
 .control-key {

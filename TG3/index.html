@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CLASSIC NES TETRIS</title>
     <link rel="stylesheet" href="styles_responsive.css">
+    <style>
+        .footer-controls { display: flex; gap: 16px; justify-content: center; margin-top: 12px; }
+        .footer-controls .game-btn { min-width: 140px; }
+    </style>
 </head>
 <body>
     <div class="game-container">
@@ -44,7 +48,7 @@
                 </div>
                 
                 <div class="controls-section">
-                    <div class="controls-title">CONTROLS</div>
+                    <div class="controls-title">KEYBOARD CONTROLS</div>
                     <div class="control-item">
                         <span class="control-key">Enter</span>
                         <span class="control-separator">:</span>
@@ -80,7 +84,14 @@
                         <span class="control-separator">:</span>
                         <span class="control-action">MUSIC TOGGLE</span>
                     </div>
+                    <div class="control-item">
+                        <span class="control-key">D</span>
+                        <span class="control-separator">:</span>
+                        <span class="control-action">HARD DROP</span>
+                    </div>
                 </div>
+                
+                
                 
                 <div class="high-scores-section">
                     <div class="high-scores-title" id="highScoresTitle">HIGH SCORES</div>
@@ -101,16 +112,20 @@
                 </div>
             </div>
         </div>
-        
-        <div class="game-footer">
-            <button id="startBtn" class="game-btn">START GAME</button>
-            <button id="pauseBtn" class="game-btn" disabled>PAUSE</button>
-            <button id="resetBtn" class="game-btn">RESET</button>
+        <div class="game-footer footer-controls">
+            <button id="startPauseBtn" class="game-btn">START</button>
+            <button id="newBtn" class="game-btn">NEW</button>
         </div>
+        
         
     </div>
     
     <script src="audio.js"></script>
+    <script src="logging/logger.js"></script>
+    <script src="input/haptics.js"></script>
+    <script src="input/keyboard_controller.js"></script>
+    <script src="input/gamepad_controller.js"></script>
+    <script src="input/input_manager.js"></script>
     <script src="tetris.js"></script>
 </body>
 </html>

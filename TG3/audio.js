@@ -76,7 +76,19 @@ class NESTetrisAudio {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
             
-            oscillator.connect(gainNode);
+            // 为落地三类音效加入低通以增强低频厚重感
+            let filterNode = null;
+            const useBassFilter = (type === 'lock' || type === 'softlock' || type === 'hardlock');
+            if (useBassFilter) {
+                filterNode = this.audioContext.createBiquadFilter();
+                filterNode.type = 'lowpass';
+                filterNode.frequency.setValueAtTime(1200, this.audioContext.currentTime); // 截止频率，保留低频
+                oscillator.connect(filterNode);
+                filterNode.connect(gainNode);
+            } else {
+                oscillator.connect(gainNode);
+            }
+            
             gainNode.connect(this.sfxGain);
             
             const startTime = this.audioContext.currentTime; // 立即播放，零延迟
@@ -96,9 +108,22 @@ class NESTetrisAudio {
                         break;
                         
                     case 'lock':
-                        // 舒适锁定音效 - 200Hz正弦波，更自然
+                        // 自然锁定（统一风格：低音方波，轻微下滑）
+                        oscillator.type = 'square';
+                        oscillator.frequency.setValueAtTime(180, startTime);
+                        oscillator.frequency.linearRampToValueAtTime(160, startTime + duration);
+                        break;
+                    case 'softlock':
+                        // 软降落地（统一风格：方波，下滑更明显，频率稍高）
+                        oscillator.type = 'square';
                         oscillator.frequency.setValueAtTime(200, startTime);
-                        oscillator.type = 'sine'; // 正弦波，更自然
+                        oscillator.frequency.linearRampToValueAtTime(160, startTime + duration);
+                        break;
+                    case 'hardlock':
+                        // 硬降落地（统一风格：方波，明显下滑，更厚重）
+                        oscillator.type = 'square';
+                        oscillator.frequency.setValueAtTime(220, startTime);
+                        oscillator.frequency.linearRampToValueAtTime(140, startTime + duration * 0.9);
                         break;
                         
                     case 'line':
@@ -142,9 +167,21 @@ class NESTetrisAudio {
                         break;
                         
                     case 'lock':
-                        // 锁定音效 - 舒适音量包络 (150ms)
-                        gainNode.gain.setValueAtTime(0.3, startTime); // 中等音量
-                        gainNode.gain.linearRampToValueAtTime(0.25, startTime + duration * 0.5);
+                        // 自然锁定 - 150ms，基础强度
+                        gainNode.gain.setValueAtTime(0.28, startTime);
+                        gainNode.gain.linearRampToValueAtTime(0.22, startTime + duration * 0.45);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                        break;
+                    case 'softlock':
+                        // 软降落地 - 160ms，中等强度
+                        gainNode.gain.setValueAtTime(0.33, startTime);
+                        gainNode.gain.linearRampToValueAtTime(0.26, startTime + duration * 0.5);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                        break;
+                    case 'hardlock':
+                        // 硬降落地 - 140ms，最强
+                        gainNode.gain.setValueAtTime(0.38, startTime);
+                        gainNode.gain.linearRampToValueAtTime(0.3, startTime + duration * 0.4);
                         gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
                         break;
                         
@@ -339,7 +376,13 @@ class NESTetrisAudio {
                 this.generateChiptuneSFX('rotate', 800, 0.1); // 舒适100ms
                 break;
             case 'lock':
-                this.generateChiptuneSFX('lock', 200, 0.15); // 舒适150ms
+                this.generateChiptuneSFX('lock', 220, 0.15);
+                break;
+            case 'softlock':
+                this.generateChiptuneSFX('softlock', 260, 0.15);
+                break;
+            case 'hardlock':
+                this.generateChiptuneSFX('hardlock', 180, 0.12);
                 break;
             case 'line':
                 this.generateChiptuneSFX('line', 1000, 0.2); // 舒适200ms
