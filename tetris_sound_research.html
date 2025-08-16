@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>经典俄罗斯方块音效调研</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .section h2 {
+            color: #ffd700;
+            margin-top: 0;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+            padding-bottom: 10px;
+        }
+        .research-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .research-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .research-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .research-content {
+            line-height: 1.6;
+        }
+        .research-content ul {
+            padding-left: 20px;
+        }
+        .research-content li {
+            margin: 8px 0;
+        }
+        .highlight {
+            background: rgba(255, 215, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffd700;
+            margin: 15px 0;
+        }
+        .highlight h3 {
+            color: #ffd700;
+            margin-top: 0;
+        }
+        .info-box {
+            background: rgba(33, 150, 243, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            margin: 15px 0;
+        }
+        .info-box h3 {
+            color: #2196f3;
+            margin-top: 0;
+        }
+        .warning-box {
+            background: rgba(255, 152, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+            margin: 15px 0;
+        }
+        .warning-box h3 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+        .success-box {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            margin: 15px 0;
+        }
+        .success-box h3 {
+            color: #4caf50;
+            margin-top: 0;
+        }
+        .technical-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .technical-table th,
+        .technical-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .technical-table th {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .technical-table td {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 经典俄罗斯方块音效调研报告</h1>
+        
+        <div class="info-box">
+            <h3>📋 调研目标</h3>
+            <p>本次调研旨在深入了解经典俄罗斯方块（NES版本）的音效系统，为TG3版本提供100%还原的音效设计方案。</p>
+        </div>
+
+        <!-- 经典俄罗斯方块版本调研 -->
+        <div class="section">
+            <h2>🎮 经典俄罗斯方块版本调研</h2>
+            <div class="research-grid">
+                <div class="research-card">
+                    <div class="research-title">NES俄罗斯方块 (1989)</div>
+                    <div class="research-content">
+                        <p><strong>平台</strong>: Nintendo Entertainment System</p>
+                        <p><strong>开发商</strong>: Nintendo</p>
+                        <p><strong>音效系统</strong>: 2A03 APU (Audio Processing Unit)</p>
+                        <p><strong>特点</strong>: 最经典的俄罗斯方块版本</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">Game Boy俄罗斯方块 (1989)</div>
+                    <div class="research-content">
+                        <p><strong>平台</strong>: Nintendo Game Boy</p>
+                        <p><strong>开发商</strong>: Nintendo</p>
+                        <p><strong>音效系统</strong>: 4通道音频</p>
+                        <p><strong>特点</strong>: 便携版经典音效</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">街机俄罗斯方块 (1988)</div>
+                    <div class="research-content">
+                        <p><strong>平台</strong>: 街机</p>
+                        <p><strong>开发商</strong>: Atari</p>
+                        <p><strong>音效系统</strong>: 专用音频芯片</p>
+                        <p><strong>特点</strong>: 最早的商业版本</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NES音效系统技术分析 -->
+        <div class="section">
+            <h2>🔧 NES音效系统技术分析</h2>
+            
+            <div class="highlight">
+                <h3>🎵 2A03 APU音频处理单元</h3>
+                <p>NES的音频系统由2A03 APU提供，包含以下音频通道：</p>
+                <ul>
+                    <li><strong>2个方波通道</strong>: 用于音效和音乐</li>
+                    <li><strong>1个三角波通道</strong>: 用于低音</li>
+                    <li><strong>1个噪声通道</strong>: 用于打击乐和特效</li>
+                    <li><strong>1个PCM通道</strong>: 用于数字音频</li>
+                </ul>
+            </div>
+
+            <div class="technical-table">
+                <thead>
+                    <tr>
+                        <th>音频通道</th>
+                        <th>频率范围</th>
+                        <th>用途</th>
+                        <th>特点</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>方波通道1</td>
+                        <td>54Hz - 28kHz</td>
+                        <td>主旋律、音效</td>
+                        <td>12位频率控制</td>
+                    </tr>
+                    <tr>
+                        <td>方波通道2</td>
+                        <td>54Hz - 28kHz</td>
+                        <td>和声、音效</td>
+                        <td>12位频率控制</td>
+                    </tr>
+                    <tr>
+                        <td>三角波通道</td>
+                        <td>27Hz - 56kHz</td>
+                        <td>低音、背景</td>
+                        <td>11位频率控制</td>
+                    </tr>
+                    <tr>
+                        <td>噪声通道</td>
+                        <td>N/A</td>
+                        <td>打击乐、特效</td>
+                        <td>15种噪声模式</td>
+                    </tr>
+                </tbody>
+            </div>
+        </div>
+
+        <!-- 经典音效详细分析 -->
+        <div class="section">
+            <h2>🎵 经典音效详细分析</h2>
+            
+            <div class="research-grid">
+                <div class="research-card">
+                    <div class="research-title">移动音效 (Move)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 方波</p>
+                        <p><strong>频率</strong>: 约800-1000Hz</p>
+                        <p><strong>持续时间</strong>: 约50-80ms</p>
+                        <p><strong>音量</strong>: 中等</p>
+                        <p><strong>特点</strong>: 清脆的"滴"声，频率稳定</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">旋转音效 (Rotate)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 方波</p>
+                        <p><strong>频率</strong>: 约1000-1200Hz</p>
+                        <p><strong>持续时间</strong>: 约60-100ms</p>
+                        <p><strong>音量</strong>: 中等偏大</p>
+                        <p><strong>特点</strong>: 比移动音效稍高，更清脆</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">锁定音效 (Lock)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 三角波</p>
+                        <p><strong>频率</strong>: 约200-400Hz</p>
+                        <p><strong>持续时间</strong>: 约100-150ms</p>
+                        <p><strong>音量</strong>: 中等</p>
+                        <p><strong>特点</strong>: 低沉的"咚"声</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">消行音效 (Line Clear)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 方波</p>
+                        <p><strong>频率</strong>: 约1200-1600Hz</p>
+                        <p><strong>持续时间</strong>: 约150-200ms</p>
+                        <p><strong>音量</strong>: 较大</p>
+                        <p><strong>特点</strong>: 上升音调，庆祝感</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">Tetris音效 (4行消除)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 方波</p>
+                        <p><strong>频率</strong>: 约800-2000Hz</p>
+                        <p><strong>持续时间</strong>: 约300-400ms</p>
+                        <p><strong>音量</strong>: 最大</p>
+                        <p><strong>特点</strong>: 复杂的上升音阶</p>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">升级音效 (Level Up)</div>
+                    <div class="research-content">
+                        <p><strong>波形</strong>: 方波</p>
+                        <p><strong>频率</strong>: 约600-1800Hz</p>
+                        <p><strong>持续时间</strong>: 约400-500ms</p>
+                        <p><strong>音量</strong>: 较大</p>
+                        <p><strong>特点</strong>: 欢快的上升音阶</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 音效播放机制分析 -->
+        <div class="section">
+            <h2>⚙️ 音效播放机制分析</h2>
+            
+            <div class="warning-box">
+                <h3>⚠️ 当前TG3音效问题分析</h3>
+                <p>通过对比经典俄罗斯方块，发现当前TG3音效存在以下问题：</p>
+                <ul>
+                    <li><strong>频率不准确</strong>: 当前频率设置与经典版本不符</li>
+                    <li><strong>波形选择错误</strong>: 部分音效使用了错误的波形</li>
+                    <li><strong>持续时间不匹配</strong>: 音效持续时间与经典版本差异较大</li>
+                    <li><strong>音量包络不准确</strong>: 音量变化曲线不符合经典设计</li>
+                    <li><strong>播放时机不精确</strong>: 音效触发时机需要优化</li>
+                </ul>
+            </div>
+
+            <div class="code-block">
+                // 经典俄罗斯方块音效参数参考
+                const CLASSIC_SOUNDS = {
+                    move: {
+                        waveform: 'square',
+                        frequency: 900,      // 900Hz
+                        duration: 0.06,      // 60ms
+                        volume: 0.3,
+                        envelope: 'quick'
+                    },
+                    rotate: {
+                        waveform: 'square',
+                        frequency: 1100,     // 1100Hz
+                        duration: 0.08,      // 80ms
+                        volume: 0.35,
+                        envelope: 'quick'
+                    },
+                    lock: {
+                        waveform: 'triangle',
+                        frequency: 300,      // 300Hz
+                        duration: 0.12,      // 120ms
+                        volume: 0.3,
+                        envelope: 'medium'
+                    },
+                    line: {
+                        waveform: 'square',
+                        frequency: 1400,     // 1400Hz
+                        duration: 0.18,      // 180ms
+                        volume: 0.4,
+                        envelope: 'rising'
+                    },
+                    tetris: {
+                        waveform: 'square',
+                        frequency: [800, 1200, 1600, 2000], // 上升音阶
+                        duration: 0.35,      // 350ms
+                        volume: 0.5,
+                        envelope: 'complex'
+                    }
+                };
+            </div>
+        </div>
+
+        <!-- 100%还原设计方案 -->
+        <div class="section">
+            <h2>🎯 100%还原设计方案</h2>
+            
+            <div class="success-box">
+                <h3>✅ 还原策略</h3>
+                <p>基于调研结果，制定以下100%还原策略：</p>
+                <ol>
+                    <li><strong>精确频率匹配</strong>: 使用经典俄罗斯方块的精确频率值</li>
+                    <li><strong>正确波形选择</strong>: 严格按照经典版本的波形类型</li>
+                    <li><strong>准确持续时间</strong>: 匹配经典音效的精确持续时间</li>
+                    <li><strong>经典音量包络</strong>: 还原经典音效的音量变化曲线</li>
+                    <li><strong>精确播放时机</strong>: 确保音效在正确的时机触发</li>
+                </ol>
+            </div>
+
+            <div class="research-grid">
+                <div class="research-card">
+                    <div class="research-title">第一阶段：基础还原</div>
+                    <div class="research-content">
+                        <ul>
+                            <li>修正所有音效的频率值</li>
+                            <li>调整波形类型</li>
+                            <li>设置准确的持续时间</li>
+                            <li>优化音量包络</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">第二阶段：细节优化</div>
+                    <div class="research-content">
+                        <ul>
+                            <li>微调频率变化曲线</li>
+                            <li>优化音效播放时机</li>
+                            <li>调整音效间隔</li>
+                            <li>测试音效协调性</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="research-card">
+                    <div class="research-title">第三阶段：完美还原</div>
+                    <div class="research-content">
+                        <ul>
+                            <li>对比经典版本进行A/B测试</li>
+                            <li>微调至100%匹配</li>
+                            <li>确保所有音效完美还原</li>
+                            <li>最终验证和确认</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 执行计划 -->
+        <div class="section">
+            <h2>📋 执行计划</h2>
+            
+            <div class="highlight">
+                <h3>🚀 下一步行动</h3>
+                <p>基于调研结果，将按以下步骤执行100%还原：</p>
+                <ol>
+                    <li><strong>立即执行</strong>: 修正所有音效的基础参数（频率、波形、持续时间）</li>
+                    <li><strong>精细调整</strong>: 优化音量包络和播放时机</li>
+                    <li><strong>测试验证</strong>: 对比经典版本进行验证</li>
+                    <li><strong>最终确认</strong>: 确保100%还原效果</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 调研结论</h3>
+            <p>通过详细调研，发现经典俄罗斯方块的音效系统具有精确的技术参数和独特的设计理念。当前TG3版本的音效确实存在较大偏差，需要进行全面的参数修正才能实现100%还原。</p>
+        </div>
+    </div>
+</body>
+</html>
+

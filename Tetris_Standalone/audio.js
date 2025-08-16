@@ -25,26 +25,14 @@ class NESTetrisAudio {
         // 音效缓存
         this.sfxCache = {};
         
-        // 音频优化设置 - 超低延迟
-        this.audioLatency = 0; // 零延迟
-        this.lastPlayTime = 0;
-        this.minPlayInterval = 0.005; // 5ms间隔，几乎无限制
-        this.lastSFXType = ''; // 记录上次播放的音效类型
-        this.moveSFXInterval = 0.03; // 30ms移动间隔，更快速响应
-        this.lastMoveTime = 0; // 记录上次移动音效时间
-        
         // 初始化音频系统
         this.initAudio();
     }
     
     initAudio() {
         try {
-            // 创建音频上下文 - 超低延迟设置
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                latencyHint: 'interactive', // 交互式低延迟
-                sampleRate: 48000, // 更高采样率，减少延迟
-                bufferSize: 256 // 小缓冲区，最小化延迟
-            });
+            // 创建音频上下文
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
             // 创建主音量控制
             this.masterGain = this.audioContext.createGain();
@@ -61,124 +49,69 @@ class NESTetrisAudio {
             this.sfxGain.connect(this.masterGain);
             this.sfxGain.gain.value = this.sfxVolume;
             
-            console.log('音频系统初始化成功 - 优化延迟模式');
+            console.log('音频系统初始化成功');
         } catch (error) {
             console.error('音频系统初始化失败:', error);
         }
     }
     
-    // 生成chiptune音效 - 超低延迟版本
+    // 生成chiptune音效
     generateChiptuneSFX(type, frequency = 440, duration = 0.1) {
         if (!this.audioContext || !this.sfxEnabled) return;
         
         try {
-            // 直接播放，不使用requestAnimationFrame，最小化延迟
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
             
             oscillator.connect(gainNode);
             gainNode.connect(this.sfxGain);
             
-            const startTime = this.audioContext.currentTime; // 立即播放，零延迟
-                
-                // 舒适版音效参数 - 保持经典特色但更柔和
-                switch (type) {
-                    case 'move':
-                        // 舒适移动音效 - 600Hz正弦波，更柔和
-                        oscillator.frequency.setValueAtTime(600, startTime);
-                        oscillator.type = 'sine'; // 正弦波，更舒适
-                        break;
-                        
-                    case 'rotate':
-                        // 舒适旋转音效 - 800Hz三角波，清脆但不刺耳
-                        oscillator.frequency.setValueAtTime(800, startTime);
-                        oscillator.type = 'triangle'; // 三角波，清脆
-                        break;
-                        
-                    case 'lock':
-                        // 舒适锁定音效 - 200Hz正弦波，更自然
-                        oscillator.frequency.setValueAtTime(200, startTime);
-                        oscillator.type = 'sine'; // 正弦波，更自然
-                        break;
-                        
-                    case 'line':
-                        // 舒适消行音效 - 1000Hz→1500Hz正弦波，更自然的上升
-                        oscillator.frequency.setValueAtTime(1000, startTime);
-                        oscillator.frequency.exponentialRampToValueAtTime(1500, startTime + duration * 0.6);
-                        oscillator.type = 'sine'; // 正弦波，更自然的上升
-                        break;
-                        
-                    case 'levelup':
-                        // 舒适升级音效 - 500Hz→1200Hz正弦波，更舒适的上升音阶
-                        oscillator.frequency.setValueAtTime(500, startTime);
-                        oscillator.frequency.exponentialRampToValueAtTime(800, startTime + duration * 0.3);
-                        oscillator.frequency.exponentialRampToValueAtTime(1200, startTime + duration);
-                        oscillator.type = 'sine'; // 正弦波，更舒适
-                        break;
-                        
-                    case 'gameover':
-                        // 舒适游戏结束音效 - 300Hz→80Hz正弦波，更自然的下降
-                        oscillator.frequency.setValueAtTime(300, startTime);
-                        oscillator.frequency.exponentialRampToValueAtTime(200, startTime + duration * 0.4);
-                        oscillator.frequency.exponentialRampToValueAtTime(80, startTime + duration);
-                        oscillator.type = 'sine'; // 正弦波，更自然
-                        break;
-                }
-                
-                // 舒适版音量包络 - 更自然的衰减
-                switch (type) {
-                    case 'move':
-                        // 移动音效 - 舒适音量包络 (80ms)
-                        gainNode.gain.setValueAtTime(0.2, startTime); // 降低音量
-                        gainNode.gain.linearRampToValueAtTime(0.15, startTime + duration * 0.3);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    case 'rotate':
-                        // 旋转音效 - 舒适音量包络 (100ms)
-                        gainNode.gain.setValueAtTime(0.25, startTime); // 适中音量
-                        gainNode.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.4);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    case 'lock':
-                        // 锁定音效 - 舒适音量包络 (150ms)
-                        gainNode.gain.setValueAtTime(0.3, startTime); // 中等音量
-                        gainNode.gain.linearRampToValueAtTime(0.25, startTime + duration * 0.5);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    case 'line':
-                        // 消行音效 - 舒适音量包络 (200ms)
-                        gainNode.gain.setValueAtTime(0.4, startTime); // 较重音量
-                        gainNode.gain.linearRampToValueAtTime(0.35, startTime + duration * 0.4);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    case 'levelup':
-                        // 升级音效 - 舒适音量包络 (500ms)
-                        gainNode.gain.setValueAtTime(0.5, startTime); // 重音量
-                        gainNode.gain.linearRampToValueAtTime(0.45, startTime + duration * 0.4);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    case 'gameover':
-                        // 游戏结束音效 - 舒适音量包络 (600ms)
-                        gainNode.gain.setValueAtTime(0.6, startTime); // 最重音量
-                        gainNode.gain.linearRampToValueAtTime(0.5, startTime + duration * 0.3);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                        
-                    default:
-                        // 默认舒适音量
-                        gainNode.gain.setValueAtTime(0.25, startTime);
-                        gainNode.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.4);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                        break;
-                }
-                
-                oscillator.start(startTime);
-                oscillator.stop(startTime + duration);
+            // 根据音效类型设置参数
+            switch (type) {
+                case 'move':
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.8, this.audioContext.currentTime + duration);
+                    oscillator.type = 'square';
+                    break;
+                    
+                case 'rotate':
+                    oscillator.frequency.setValueAtTime(frequency * 1.2, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency, this.audioContext.currentTime + duration);
+                    oscillator.type = 'square';
+                    break;
+                    
+                case 'lock':
+                    oscillator.frequency.setValueAtTime(frequency * 0.5, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.3, this.audioContext.currentTime + duration);
+                    oscillator.type = 'sawtooth';
+                    break;
+                    
+                case 'line':
+                    oscillator.frequency.setValueAtTime(frequency * 2, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 4, this.audioContext.currentTime + duration);
+                    oscillator.type = 'square';
+                    break;
+                    
+                case 'levelup':
+                    oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 2, this.audioContext.currentTime + duration);
+                    oscillator.type = 'triangle';
+                    break;
+                    
+                case 'gameover':
+                    oscillator.frequency.setValueAtTime(frequency * 0.3, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.1, this.audioContext.currentTime + duration);
+                    oscillator.type = 'sawtooth';
+                    break;
+            }
+            
+            // 设置音量包络
+            gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + duration);
             
         } catch (error) {
             console.error('音效生成失败:', error);
@@ -308,47 +241,26 @@ class NESTetrisAudio {
         this.currentMusic = null;
     }
     
-    // 播放音效 - 优化版本，恢复更多音效但保持低延迟
+    // 播放音效
     playSFX(type) {
-        if (!this.audioContext || !this.sfxEnabled) return;
-        
-        const currentTime = this.audioContext.currentTime;
-        
-        // 移动音效特殊处理 - 防止过于频繁
-        if (type === 'move') {
-            if (currentTime - this.lastMoveTime < this.moveSFXInterval) {
-                return;
-            }
-            this.lastMoveTime = currentTime;
-        } else {
-            // 其他音效的防重复检查
-            if (type === this.lastSFXType && currentTime - this.lastPlayTime < this.minPlayInterval) {
-                return;
-            }
-        }
-        
-        this.lastPlayTime = currentTime;
-        this.lastSFXType = type;
-        
-        // 直接播放，不使用requestAnimationFrame，最小化延迟
         switch (type) {
             case 'move':
-                this.generateChiptuneSFX('move', 600, 0.08); // 舒适80ms
+                this.generateChiptuneSFX('move', 800, 0.05);
                 break;
             case 'rotate':
-                this.generateChiptuneSFX('rotate', 800, 0.1); // 舒适100ms
+                this.generateChiptuneSFX('rotate', 1000, 0.08);
                 break;
             case 'lock':
-                this.generateChiptuneSFX('lock', 200, 0.15); // 舒适150ms
+                this.generateChiptuneSFX('lock', 400, 0.15);
                 break;
             case 'line':
-                this.generateChiptuneSFX('line', 1000, 0.2); // 舒适200ms
+                this.generateChiptuneSFX('line', 1200, 0.2);
                 break;
             case 'levelup':
-                this.generateChiptuneSFX('levelup', 500, 0.5); // 舒适500ms
+                this.generateChiptuneSFX('levelup', 600, 0.3);
                 break;
             case 'gameover':
-                this.generateChiptuneSFX('gameover', 300, 0.6); // 舒适600ms
+                this.generateChiptuneSFX('gameover', 200, 0.5);
                 break;
         }
     }

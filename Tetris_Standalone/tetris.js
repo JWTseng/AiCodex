@@ -249,9 +249,9 @@ class NESTetris {
         
         // 线性加速系统
         this.softDropAcceleration = 0; // 软降加速度
-        this.accelerationRate = 4.8;   // 加速度增长率（每帧）- 提高一倍
-        this.maxAcceleration = 500;    // 最大加速度 - 提高一倍
-        this.baseSoftDropSpeed = 4;    // 基础软降速度倍数
+        this.accelerationRate = 2.4;   // 加速度增长率（每帧）- 提高一倍
+        this.maxAcceleration = 200;    // 最大加速度 - 提高一倍
+        this.baseSoftDropSpeed = 2;    // 基础软降速度倍数
         
         // 输入状态
         this.keys = {
@@ -700,7 +700,7 @@ class NESTetris {
             this.currentPiece.x += dx;
             this.currentPiece.y += dy;
             
-            // 播放移动音效 - 恢复所有移动音效
+            // 播放移动音效
             if (dx !== 0 || dy !== 0) {
                 this.audio.playSFX('move');
             }
@@ -1591,6 +1591,26 @@ class NESTetris {
         if (comboCount < 2) return;
         
         try {
+            // 连击音效配置（2-10连击独立音效，>10沿用10连击音效）
+            const comboSounds = {
+                2: { frequency: 440, duration: 0.2 },   // A4音
+                3: { frequency: 523, duration: 0.2 },   // C5音
+                4: { frequency: 659, duration: 0.3 },   // E5音
+                5: { frequency: 784, duration: 0.4 },   // G5音
+                6: { frequency: 880, duration: 0.4 },   // A5音
+                7: { frequency: 1047, duration: 0.5 },  // C6音
+                8: { frequency: 1319, duration: 0.5 },  // E6音
+                9: { frequency: 1568, duration: 0.6 },  // G6音
+                10: { frequency: 1760, duration: 0.6 }  // A6音
+            };
+            
+            // 获取音效配置，>10连击沿用10连击音效
+            let sound = comboSounds[comboCount];
+            if (!sound) {
+                sound = comboSounds[10];
+                console.log(`使用10连击音效配置: ${comboCount}连击`);
+            }
+            
             // 检查音频上下文是否可用
             if (!this.audio || !this.audio.audioContext) {
                 console.log('音频上下文不可用');
@@ -1603,144 +1623,27 @@ class NESTetris {
                 this.audio.audioContext.resume();
             }
             
-            // 舒适版连击音效 - 超低延迟版本
-            this.generateComboSFX(comboCount);
+            // 使用Web Audio API生成音效
+            const oscillator = this.audio.audioContext.createOscillator();
+            const gainNode = this.audio.audioContext.createGain();
             
-            console.log(`播放舒适连击音效: ${comboCount}连击`);
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audio.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(sound.frequency, this.audio.audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.3, this.audio.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audio.audioContext.currentTime + sound.duration);
+            
+            oscillator.start(this.audio.audioContext.currentTime);
+            oscillator.stop(this.audio.audioContext.currentTime + sound.duration);
+            
+            console.log(`播放连击音效: ${comboCount}连击, 频率${sound.frequency}Hz, 时长${sound.duration}s`);
         } catch (error) {
             console.log('播放连击音效失败:', error);
         }
     }
-    
-    // 生成钢琴音阶连击音效
-    generateComboSFX(comboCount) {
-        if (!this.audio || !this.audio.audioContext) return;
-        
-        try {
-            // 钢琴音阶连击音效配置 - C大调音阶
-            const pianoComboConfig = {
-                2: { notes: [261.63], chord: [329.63], duration: 0.6, volume: 0.25 },     // C4 + E4 (大三度)
-                3: { notes: [293.66], chord: [369.99], duration: 0.7, volume: 0.3 },      // D4 + F#4 (大三度)
-                4: { notes: [329.63], chord: [415.30], duration: 0.8, volume: 0.35 },     // E4 + G#4 (大三度)
-                5: { notes: [349.23], chord: [440.00], duration: 0.9, volume: 0.4 },      // F4 + A4 (大三度)
-                6: { notes: [392.00], chord: [493.88], duration: 1.0, volume: 0.45 },     // G4 + B4 (大三度)
-                7: { notes: [440.00], chord: [554.37], duration: 1.1, volume: 0.5 },      // A4 + C#5 (大三度)
-                8: { notes: [493.88], chord: [622.25], duration: 1.2, volume: 0.55 },     // B4 + D#5 (大三度)
-                9: { notes: [523.25], chord: [659.25], duration: 1.3, volume: 0.6 },      // C5 + E5 (大三度)
-                10: { notes: [587.33], chord: [739.99], duration: 1.4, volume: 0.65 }     // D5 + F#5 (大三度)
-            };
-            
-            // 获取配置，高连击沿用10连击配置
-            const config = pianoComboConfig[Math.min(comboCount, 10)];
-            
-            // 直接播放，超低延迟
-            const startTime = this.audio.audioContext.currentTime;
-            
-            // 创建钢琴音色（使用多重振荡器模拟钢琴复合音色）
-            this.createPianoNote(config.notes[0], config.volume, config.duration, startTime, true); // 主音
-            this.createPianoNote(config.chord[0], config.volume * 0.7, config.duration, startTime + 0.1, false); // 和弦音
-            
-            // 高连击添加琶音效果（>= 6连击）
-            if (comboCount >= 6) {
-                this.addPianoArpeggio(startTime, config, comboCount);
-            }
-            
-            // 超高连击添加钢琴颤音（>= 8连击）
-            if (comboCount >= 8) {
-                this.addPianoTremolo(startTime, config.notes[0], config.duration);
-            }
-            
-        } catch (error) {
-            console.error('钢琴连击音效生成失败:', error);
-        }
-    }
-    
-    // 创建钢琴音符（模拟钢琴复合音色）
-    createPianoNote(frequency, volume, duration, startTime, isMainNote = true) {
-        try {
-            // 钢琴音色由多个谐波组成
-            const harmonics = [
-                { freq: frequency, vol: 1.0 },           // 基频
-                { freq: frequency * 2, vol: 0.3 },       // 2次谐波
-                { freq: frequency * 3, vol: 0.15 },      // 3次谐波
-                { freq: frequency * 4, vol: 0.08 },      // 4次谐波
-                { freq: frequency * 5, vol: 0.04 }       // 5次谐波
-            ];
-            
-            harmonics.forEach((harmonic, index) => {
-                const oscillator = this.audio.audioContext.createOscillator();
-                const gainNode = this.audio.audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(this.audio.sfxGain);
-                
-                // 钢琴音色使用正弦波作为基础
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(harmonic.freq, startTime);
-                
-                // 钢琴特有的音量包络（快速攻击，缓慢衰减）
-                const noteVolume = volume * harmonic.vol * (isMainNote ? 1.0 : 0.7);
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(noteVolume, startTime + 0.01); // 快速攻击
-                gainNode.gain.exponentialRampToValueAtTime(noteVolume * 0.6, startTime + 0.1); // 快速衰减
-                gainNode.gain.exponentialRampToValueAtTime(noteVolume * 0.3, startTime + duration * 0.5); // 持续衰减
-                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration); // 完全衰减
-                
-                oscillator.start(startTime);
-                oscillator.stop(startTime + duration);
-            });
-            
-        } catch (error) {
-            console.error('钢琴音符创建失败:', error);
-        }
-    }
-    
-    // 钢琴琶音效果（高连击专用）
-    addPianoArpeggio(startTime, config, comboCount) {
-        try {
-            // 琶音音符序列（向上琶音）
-            const arpeggioNotes = [
-                config.notes[0],
-                config.chord[0],
-                config.notes[0] * 1.5,  // 五度
-                config.notes[0] * 2     // 八度
-            ];
-            
-            const arpeggioDelay = 0.08; // 琶音间隔
-            
-            arpeggioNotes.forEach((freq, index) => {
-                const noteStartTime = startTime + 0.2 + (index * arpeggioDelay);
-                this.createPianoNote(freq, config.volume * 0.4, 0.5, noteStartTime, false);
-            });
-            
-        } catch (error) {
-            console.error('钢琴琶音效果失败:', error);
-        }
-    }
-    
-    // 钢琴颤音效果（超高连击专用）
-    addPianoTremolo(startTime, baseFreq, duration) {
-        try {
-            // 颤音效果（快速交替两个相近音符）
-            const tremoloFreq1 = baseFreq * 2;
-            const tremoloFreq2 = baseFreq * 2.059; // 半音关系
-            const tremoloSpeed = 0.05; // 颤音速度
-            const tremoloCount = Math.floor(duration / tremoloSpeed / 2);
-            
-            for (let i = 0; i < tremoloCount; i++) {
-                const tremolo1Time = startTime + 0.4 + (i * tremoloSpeed * 2);
-                const tremolo2Time = tremolo1Time + tremoloSpeed;
-                
-                this.createPianoNote(tremoloFreq1, 0.15, tremoloSpeed * 1.5, tremolo1Time, false);
-                this.createPianoNote(tremoloFreq2, 0.15, tremoloSpeed * 1.5, tremolo2Time, false);
-            }
-            
-        } catch (error) {
-            console.error('钢琴颤音效果失败:', error);
-        }
-    }
-    
-
     
     // 屏幕震动
     screenShake(comboCount) {
@@ -1874,9 +1777,10 @@ class NESTetris {
         }
     }
     
-} // 结束NESTetris类
 
-// 初始化游戏
+}
+
+    // 初始化游戏
     document.addEventListener('DOMContentLoaded', () => {
         const tetrisGame = new NESTetris();
         // 自动开始游戏

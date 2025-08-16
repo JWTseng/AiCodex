@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TG3音频测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+        .status.warning {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 TG3音频测试</h1>
+        
+        <div class="test-section">
+            <h3>📊 TG3音频状态</h3>
+            <div id="tg3AudioStatus" class="status warning">
+                ⏳ 正在检测TG3音频系统...
+            </div>
+            <button onclick="testTG3Audio()">测试TG3音频</button>
+            <button onclick="loadTG3Game()">加载TG3游戏</button>
+            <button onclick="clearConsole()">清空控制台</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 TG3游戏</h3>
+            <iframe id="tg3Frame" class="game-frame" src="TG3/index.html"></iframe>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 控制台输出</h3>
+            <div id="consoleOutput" class="console-output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 调试信息</h3>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let tg3AudioManager = null;
+        let consoleOutput = [];
+
+        // 添加控制台输出
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            consoleOutput.push(logEntry);
+            
+            const consoleDiv = document.getElementById('consoleOutput');
+            consoleDiv.innerHTML = consoleOutput.join('<br>');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            console.log(message);
+        }
+
+        // 清空控制台
+        function clearConsole() {
+            consoleOutput = [];
+            document.getElementById('consoleOutput').innerHTML = '';
+        }
+
+        // 测试TG3音频
+        function testTG3Audio() {
+            log('开始测试TG3音频系统...');
+            
+            try {
+                // 动态加载TG3的audio.js
+                const script = document.createElement('script');
+                script.src = 'TG3/audio.js';
+                script.onload = function() {
+                    log('TG3 audio.js 加载成功');
+                    
+                    if (typeof NESTetrisAudio !== 'undefined') {
+                        tg3AudioManager = new NESTetrisAudio();
+                        log('TG3音频管理器创建成功');
+                        
+                        // 测试音频上下文
+                        if (tg3AudioManager.audioContext) {
+                            log(`音频上下文状态: ${tg3AudioManager.audioContext.state}`);
+                            
+                            if (tg3AudioManager.audioContext.state === 'suspended') {
+                                log('音频上下文被暂停，尝试激活...');
+                                tg3AudioManager.audioContext.resume().then(() => {
+                                    log('音频上下文激活成功');
+                                    testAudioFunctions();
+                                }).catch(error => {
+                                    log(`音频上下文激活失败: ${error.message}`);
+                                });
+                            } else {
+                                testAudioFunctions();
+                            }
+                        } else {
+                            log('错误: 音频上下文未创建');
+                        }
+                    } else {
+                        log('错误: NESTetrisAudio类未定义');
+                    }
+                };
+                script.onerror = function() {
+                    log('错误: 无法加载TG3/audio.js文件');
+                };
+                document.head.appendChild(script);
+            } catch (error) {
+                log(`错误: ${error.message}`);
+            }
+        }
+
+        // 测试音频功能
+        function testAudioFunctions() {
+            log('测试音频功能...');
+            
+            try {
+                // 测试音效
+                tg3AudioManager.playSFX('move');
+                log('播放移动音效');
+                
+                setTimeout(() => {
+                    tg3AudioManager.playSFX('rotate');
+                    log('播放旋转音效');
+                }, 200);
+                
+                setTimeout(() => {
+                    tg3AudioManager.playSFX('lock');
+                    log('播放锁定音效');
+                }, 400);
+                
+                setTimeout(() => {
+                    tg3AudioManager.playSFX('line');
+                    log('播放消行音效');
+                }, 600);
+                
+                setTimeout(() => {
+                    tg3AudioManager.playSFX('levelup');
+                    log('播放升级音效');
+                }, 800);
+                
+                // 测试音乐
+                setTimeout(() => {
+                    tg3AudioManager.generateBackgroundMusic('music1');
+                    log('播放背景音乐');
+                }, 1000);
+                
+                setTimeout(() => {
+                    tg3AudioManager.stopMusic();
+                    log('停止音乐');
+                }, 3000);
+                
+                updateStatus('success', '✅ TG3音频测试完成');
+            } catch (error) {
+                log(`音频功能测试失败: ${error.message}`);
+                updateStatus('error', `❌ 音频功能测试失败: ${error.message}`);
+            }
+        }
+
+        // 加载TG3游戏
+        function loadTG3Game() {
+            log('加载TG3游戏...');
+            const frame = document.getElementById('tg3Frame');
+            frame.src = 'TG3/index.html';
+            
+            // 监听iframe加载完成
+            frame.onload = function() {
+                log('TG3游戏加载完成');
+                updateStatus('success', '✅ TG3游戏加载成功');
+            };
+        }
+
+        // 更新状态
+        function updateStatus(type, message) {
+            const statusDiv = document.getElementById('tg3AudioStatus');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        // 监听iframe消息
+        window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'audio') {
+                log(`游戏音频事件: ${event.data.message}`);
+            }
+        });
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            log('TG3音频测试页面加载完成');
+            updateStatus('warning', '⏳ 等待测试...');
+        });
+
+        // 用户交互时激活音频
+        document.addEventListener('click', function() {
+            if (tg3AudioManager && tg3AudioManager.audioContext) {
+                if (tg3AudioManager.audioContext.state === 'suspended') {
+                    tg3AudioManager.audioContext.resume().then(() => {
+                        log('用户交互激活音频上下文');
+                    }).catch(error => {
+                        log(`音频激活失败: ${error.message}`);
+                    });
+                }
+            }
+        });
+
+        // 定期检查音频状态
+        setInterval(() => {
+            if (tg3AudioManager && tg3AudioManager.audioContext) {
+                const state = tg3AudioManager.audioContext.state;
+                if (state === 'running') {
+                    document.getElementById('debugInfo').innerHTML = 
+                        `<div class="status success">音频上下文状态: ${state}</div>`;
+                } else {
+                    document.getElementById('debugInfo').innerHTML = 
+                        `<div class="status warning">音频上下文状态: ${state}</div>`;
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单TG3测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .warning { background: #fff3e0; color: #e65100; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 简单TG3测试</h1>
+        
+        <div class="status warning">
+            <h3>测试步骤:</h3>
+            <ol>
+                <li>点击"加载TG3"按钮</li>
+                <li>等待游戏加载完成</li>
+                <li>点击游戏区域或按任意键激活音频</li>
+                <li>按Enter开始游戏</li>
+                <li>测试音效是否正常</li>
+            </ol>
+        </div>
+
+        <button onclick="loadTG3()">加载TG3</button>
+        <button onclick="testAudio()">测试音频</button>
+        <button onclick="checkConsole()">检查控制台</button>
+        
+        <div id="status" class="status warning">等待加载...</div>
+        
+        <iframe id="gameFrame" src="about:blank"></iframe>
+    </div>
+
+    <script>
+        function loadTG3() {
+            const status = document.getElementById('status');
+            const frame = document.getElementById('gameFrame');
+            
+            status.className = 'status warning';
+            status.innerHTML = '正在加载TG3...';
+            
+            frame.src = 'TG3/index.html';
+            
+            frame.onload = function() {
+                status.className = 'status success';
+                status.innerHTML = '✅ TG3加载完成！现在点击游戏区域或按键激活音频，然后按Enter开始游戏。';
+            };
+            
+            frame.onerror = function() {
+                status.className = 'status error';
+                status.innerHTML = '❌ TG3加载失败';
+            };
+        }
+        
+        function testAudio() {
+            const status = document.getElementById('status');
+            status.className = 'status warning';
+            status.innerHTML = '正在测试音频...';
+            
+            try {
+                // 尝试创建音频上下文
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (audioContext.state === 'suspended') {
+                    status.innerHTML = '⚠️ 音频上下文被暂停，需要用户交互激活';
+                } else {
+                    status.innerHTML = '✅ 音频上下文正常';
+                }
+                
+                // 测试简单音效
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+                
+                status.innerHTML = '✅ 音频测试成功！';
+                
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = `❌ 音频测试失败: ${error.message}`;
+            }
+        }
+        
+        function checkConsole() {
+            const status = document.getElementById('status');
+            status.className = 'status warning';
+            status.innerHTML = '请打开浏览器开发者工具(F12)查看控制台输出，检查是否有音频相关错误。';
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            console.log('简单TG3测试页面加载完成');
+        });
+    </script>
+</body>
+</html>
+

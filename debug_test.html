@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .debug-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: orange;
+            background: #fff3e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>游戏调试测试</h1>
+        
+        <div class="debug-section">
+            <h2>调试信息</h2>
+            <div id="debugInfo">
+                <div class="warning">正在检测...</div>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h2>选择游戏版本</h2>
+            <button onclick="loadGame('Tetris_Standalone')">Tetris_Standalone</button>
+            <button onclick="loadGame('TG3')">TG3</button>
+            <button onclick="checkFiles()">检查文件</button>
+            <button onclick="clearCache()">清除缓存</button>
+        </div>
+
+        <div class="debug-section">
+            <h2>游戏显示</h2>
+            <iframe id="gameFrame" src="Tetris_Standalone/index.html"></iframe>
+        </div>
+
+        <div class="debug-section">
+            <h2>控制台日志</h2>
+            <div id="consoleLog" style="background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentGame = 'Tetris_Standalone';
+        
+        // 重写console.log来捕获日志
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToLog(type, ...args) {
+            const logDiv = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? '#ff6b6b' : 
+                                  type === 'warn' ? '#ffd93d' : '#0f0';
+            logEntry.textContent = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = (...args) => {
+            originalLog.apply(console, args);
+            addToLog('log', ...args);
+        };
+        
+        console.error = (...args) => {
+            originalError.apply(console, args);
+            addToLog('error', ...args);
+        };
+        
+        console.warn = (...args) => {
+            originalWarn.apply(console, args);
+            addToLog('warn', ...args);
+        };
+        
+        function loadGame(version) {
+            currentGame = version;
+            const frame = document.getElementById('gameFrame');
+            frame.src = version + '/index.html';
+            
+            console.log(`加载游戏版本: ${version}`);
+            updateDebugInfo(`已加载 ${version} 版本`);
+        }
+        
+        function checkFiles() {
+            console.log('开始检查文件...');
+            
+            const files = [
+                'Tetris_Standalone/index.html',
+                'Tetris_Standalone/tetris.js',
+                'Tetris_Standalone/audio.js',
+                'Tetris_Standalone/styles.css',
+                'TG3/index.html',
+                'TG3/tetris.js',
+                'TG3/audio.js',
+                'TG3/styles.css'
+            ];
+            
+            files.forEach(file => {
+                fetch(file)
+                    .then(response => {
+                        if (response.ok) {
+                            console.log(`✓ ${file} 存在`);
+                        } else {
+                            console.error(`✗ ${file} 不存在 (${response.status})`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`✗ ${file} 访问失败:`, error);
+                    });
+            });
+        }
+        
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            localStorage.clear();
+            console.log('缓存已清除');
+            updateDebugInfo('缓存已清除');
+        }
+        
+        function updateDebugInfo(message) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.innerHTML = `<div class="success">${message}</div>`;
+        }
+        
+        // 监听iframe加载事件
+        document.getElementById('gameFrame').addEventListener('load', function() {
+            console.log('游戏框架加载完成');
+            updateDebugInfo('游戏框架加载完成');
+        });
+        
+        // 监听iframe错误事件
+        document.getElementById('gameFrame').addEventListener('error', function() {
+            console.error('游戏框架加载失败');
+            updateDebugInfo('游戏框架加载失败');
+        });
+        
+        // 页面加载完成后的初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('调试页面加载完成');
+            updateDebugInfo('调试页面加载完成');
+            
+            // 检查基本功能
+            checkBasicFeatures();
+        });
+        
+        function checkBasicFeatures() {
+            console.log('检查基本功能...');
+            
+            // 检查Canvas支持
+            if (typeof HTMLCanvasElement !== 'undefined') {
+                console.log('✓ Canvas API 支持');
+            } else {
+                console.error('✗ Canvas API 不支持');
+            }
+            
+            // 检查AudioContext支持
+            if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+                console.log('✓ AudioContext 支持');
+            } else {
+                console.error('✗ AudioContext 不支持');
+            }
+            
+            // 检查LocalStorage支持
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                console.log('✓ LocalStorage 支持');
+            } catch (e) {
+                console.error('✗ LocalStorage 不支持:', e);
+            }
+            
+            // 检查CSS变量支持
+            const style = getComputedStyle(document.documentElement);
+            style.setProperty('--test-var', 'test');
+            if (style.getPropertyValue('--test-var') === 'test') {
+                console.log('✓ CSS变量 支持');
+            } else {
+                console.error('✗ CSS变量 不支持');
+            }
+        }
+        
+        // 捕获全局错误
+        window.addEventListener('error', function(e) {
+            console.error('全局错误:', e.error);
+            updateDebugInfo(`全局错误: ${e.error.message}`);
+        });
+        
+        // 捕获未处理的Promise拒绝
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('未处理的Promise拒绝:', e.reason);
+            updateDebugInfo(`Promise错误: ${e.reason}`);
+        });
+    </script>
+</body>
+</html>
+

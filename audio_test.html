@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+        .status.warning {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .audio-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .volume-slider {
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔊 音频系统测试</h1>
+        
+        <div class="test-section">
+            <h3>📊 音频状态检测</h3>
+            <div id="audioStatus" class="status warning">
+                ⏳ 正在检测音频系统...
+            </div>
+            <div id="browserInfo" class="status">
+                <strong>浏览器信息:</strong> <span id="browserName">-</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎵 音频功能测试</h3>
+            <div class="audio-controls">
+                <button onclick="testAudioContext()">测试音频上下文</button>
+                <button onclick="testSFX()">测试音效</button>
+                <button onclick="testMusic()">测试音乐</button>
+                <button onclick="testVolume()">测试音量控制</button>
+            </div>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎛️ 音量控制</h3>
+            <div class="volume-control">
+                <label>主音量:</label>
+                <input type="range" id="masterVolume" class="volume-slider" min="0" max="1" step="0.1" value="0.3">
+                <span id="masterVolumeValue">30%</span>
+            </div>
+            <div class="volume-control">
+                <label>音乐音量:</label>
+                <input type="range" id="musicVolume" class="volume-slider" min="0" max="1" step="0.1" value="0.3">
+                <span id="musicVolumeValue">30%</span>
+            </div>
+            <div class="volume-control">
+                <label>音效音量:</label>
+                <input type="range" id="sfxVolume" class="volume-slider" min="0" max="1" step="0.1" value="0.8">
+                <span id="sfxVolumeValue">80%</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎮 游戏音频测试</h3>
+            <div class="audio-controls">
+                <button onclick="loadGameAudio()">加载游戏音频</button>
+                <button onclick="testGameSFX()">测试游戏音效</button>
+                <button onclick="testGameMusic()">测试游戏音乐</button>
+            </div>
+            <div id="gameAudioResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 故障排除</h3>
+            <ul>
+                <li><strong>浏览器自动播放策略:</strong> 现代浏览器需要用户交互才能播放音频</li>
+                <li><strong>音频上下文状态:</strong> 检查音频上下文是否被暂停</li>
+                <li><strong>音量设置:</strong> 确保音量不为0</li>
+                <li><strong>音频文件:</strong> 检查音频文件是否正确加载</li>
+            </ul>
+            <button onclick="diagnoseAudio()">诊断音频问题</button>
+            <div id="diagnosisResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let audioManager = null;
+        let audioContext = null;
+
+        // 检测浏览器信息
+        function detectBrowser() {
+            const userAgent = navigator.userAgent;
+            let browserName = 'Unknown';
+            
+            if (userAgent.includes('Chrome')) browserName = 'Chrome';
+            else if (userAgent.includes('Firefox')) browserName = 'Firefox';
+            else if (userAgent.includes('Safari')) browserName = 'Safari';
+            else if (userAgent.includes('Edge')) browserName = 'Edge';
+            
+            document.getElementById('browserName').textContent = browserName;
+        }
+
+        // 检测音频支持
+        function detectAudioSupport() {
+            const status = document.getElementById('audioStatus');
+            
+            // 检查Web Audio API支持
+            if (!window.AudioContext && !window.webkitAudioContext) {
+                status.className = 'status error';
+                status.innerHTML = '❌ 浏览器不支持Web Audio API';
+                return false;
+            }
+            
+            // 检查音频上下文创建
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                status.className = 'status success';
+                status.innerHTML = '✅ 音频系统支持正常';
+                return true;
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = `❌ 音频上下文创建失败: ${error.message}`;
+                return false;
+            }
+        }
+
+        // 测试音频上下文
+        function testAudioContext() {
+            const results = document.getElementById('testResults');
+            
+            if (!audioContext) {
+                results.innerHTML = '<div class="status error">❌ 音频上下文未初始化</div>';
+                return;
+            }
+            
+            let status = `<div class="status success">✅ 音频上下文状态: ${audioContext.state}</div>`;
+            
+            if (audioContext.state === 'suspended') {
+                status += '<div class="status warning">⚠️ 音频上下文被暂停，需要用户交互激活</div>';
+            }
+            
+            results.innerHTML = status;
+        }
+
+        // 测试音效
+        function testSFX() {
+            const results = document.getElementById('testResults');
+            
+            if (!audioContext) {
+                results.innerHTML = '<div class="status error">❌ 音频上下文未初始化</div>';
+                return;
+            }
+            
+            try {
+                // 创建测试音效
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.type = 'square';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+                
+                results.innerHTML = '<div class="status success">✅ 音效播放成功</div>';
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 音效播放失败: ${error.message}</div>`;
+            }
+        }
+
+        // 测试音乐
+        function testMusic() {
+            const results = document.getElementById('testResults');
+            
+            if (!audioContext) {
+                results.innerHTML = '<div class="status error">❌ 音频上下文未初始化</div>';
+                return;
+            }
+            
+            try {
+                // 创建简单的音乐序列
+                const notes = [440, 494, 523, 587, 659, 698, 784];
+                let currentTime = audioContext.currentTime;
+                
+                notes.forEach((frequency, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, currentTime);
+                    oscillator.type = 'triangle';
+                    
+                    gainNode.gain.setValueAtTime(0.2, currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.2);
+                    
+                    oscillator.start(currentTime);
+                    oscillator.stop(currentTime + 0.2);
+                    
+                    currentTime += 0.2;
+                });
+                
+                results.innerHTML = '<div class="status success">✅ 音乐播放成功</div>';
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 音乐播放失败: ${error.message}</div>`;
+            }
+        }
+
+        // 测试音量控制
+        function testVolume() {
+            const results = document.getElementById('testResults');
+            
+            if (!audioContext) {
+                results.innerHTML = '<div class="status error">❌ 音频上下文未初始化</div>';
+                return;
+            }
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                // 测试音量变化
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                results.innerHTML = '<div class="status success">✅ 音量控制测试成功</div>';
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 音量控制测试失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载游戏音频
+        function loadGameAudio() {
+            const results = document.getElementById('gameAudioResults');
+            
+            try {
+                // 动态加载audio.js
+                const script = document.createElement('script');
+                script.src = 'Tetris_Standalone/audio.js';
+                script.onload = function() {
+                    if (typeof NESTetrisAudio !== 'undefined') {
+                        audioManager = new NESTetrisAudio();
+                        results.innerHTML = '<div class="status success">✅ 游戏音频管理器加载成功</div>';
+                    } else {
+                        results.innerHTML = '<div class="status error">❌ 游戏音频管理器加载失败</div>';
+                    }
+                };
+                script.onerror = function() {
+                    results.innerHTML = '<div class="status error">❌ 无法加载audio.js文件</div>';
+                };
+                document.head.appendChild(script);
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 加载游戏音频失败: ${error.message}</div>`;
+            }
+        }
+
+        // 测试游戏音效
+        function testGameSFX() {
+            const results = document.getElementById('gameAudioResults');
+            
+            if (!audioManager) {
+                results.innerHTML = '<div class="status error">❌ 游戏音频管理器未加载</div>';
+                return;
+            }
+            
+            try {
+                audioManager.playSFX('move');
+                results.innerHTML = '<div class="status success">✅ 游戏音效播放成功</div>';
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 游戏音效播放失败: ${error.message}</div>`;
+            }
+        }
+
+        // 测试游戏音乐
+        function testGameMusic() {
+            const results = document.getElementById('gameAudioResults');
+            
+            if (!audioManager) {
+                results.innerHTML = '<div class="status error">❌ 游戏音频管理器未加载</div>';
+                return;
+            }
+            
+            try {
+                audioManager.generateBackgroundMusic('music1');
+                results.innerHTML = '<div class="status success">✅ 游戏音乐播放成功</div>';
+            } catch (error) {
+                results.innerHTML = `<div class="status error">❌ 游戏音乐播放失败: ${error.message}</div>`;
+            }
+        }
+
+        // 诊断音频问题
+        function diagnoseAudio() {
+            const results = document.getElementById('diagnosisResults');
+            let diagnosis = '<h4>🔍 音频诊断结果:</h4>';
+            
+            // 检查Web Audio API
+            if (!window.AudioContext && !window.webkitAudioContext) {
+                diagnosis += '<div class="status error">❌ 浏览器不支持Web Audio API</div>';
+            } else {
+                diagnosis += '<div class="status success">✅ Web Audio API支持正常</div>';
+            }
+            
+            // 检查音频上下文
+            if (audioContext) {
+                diagnosis += `<div class="status success">✅ 音频上下文已创建，状态: ${audioContext.state}</div>`;
+                if (audioContext.state === 'suspended') {
+                    diagnosis += '<div class="status warning">⚠️ 音频上下文被暂停，需要用户交互激活</div>';
+                }
+            } else {
+                diagnosis += '<div class="status error">❌ 音频上下文未创建</div>';
+            }
+            
+            // 检查游戏音频管理器
+            if (audioManager) {
+                diagnosis += '<div class="status success">✅ 游戏音频管理器已加载</div>';
+            } else {
+                diagnosis += '<div class="status error">❌ 游戏音频管理器未加载</div>';
+            }
+            
+            // 检查音量设置
+            const masterVolume = document.getElementById('masterVolume').value;
+            const musicVolume = document.getElementById('musicVolume').value;
+            const sfxVolume = document.getElementById('sfxVolume').value;
+            
+            if (masterVolume == 0) {
+                diagnosis += '<div class="status warning">⚠️ 主音量为0</div>';
+            }
+            if (musicVolume == 0) {
+                diagnosis += '<div class="status warning">⚠️ 音乐音量为0</div>';
+            }
+            if (sfxVolume == 0) {
+                diagnosis += '<div class="status warning">⚠️ 音效音量为0</div>';
+            }
+            
+            results.innerHTML = diagnosis;
+        }
+
+        // 音量控制事件
+        document.getElementById('masterVolume').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('masterVolumeValue').textContent = Math.round(value * 100) + '%';
+            if (audioManager) {
+                audioManager.setMasterVolume(parseFloat(value));
+            }
+        });
+
+        document.getElementById('musicVolume').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('musicVolumeValue').textContent = Math.round(value * 100) + '%';
+            if (audioManager) {
+                audioManager.setMusicVolume(parseFloat(value));
+            }
+        });
+
+        document.getElementById('sfxVolume').addEventListener('input', function(e) {
+            const value = e.target.value;
+            document.getElementById('sfxVolumeValue').textContent = Math.round(value * 100) + '%';
+            if (audioManager) {
+                audioManager.setSFXVolume(parseFloat(value));
+            }
+        });
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            detectBrowser();
+            detectAudioSupport();
+        });
+
+        // 用户交互时激活音频上下文
+        document.addEventListener('click', function() {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+                document.getElementById('testResults').innerHTML = '<div class="status success">✅ 音频上下文已激活</div>';
+            }
+        });
+    </script>
+</body>
+</html>
+

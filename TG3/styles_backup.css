@@ -19,12 +19,6 @@
     --piece-z: #ff0000;
     --piece-j: #0000ff;
     --piece-l: #ff8000;
-    
-    /* 响应式变量 */
-    --game-scale: 1;
-    --canvas-width: 400px;
-    --canvas-height: 800px;
-    --sidebar-width: 280px;
 }
 
 * {
@@ -41,27 +35,17 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    max-height: 100vh;
-    overflow: hidden;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
-    padding: 1vh;
-    margin: 0;
 }
 
 .game-container {
     background-color: var(--nes-dark-green);
     border: 4px solid var(--nes-light-green);
     border-radius: 8px;
-    padding: 2vh;
+    padding: 20px;
     box-shadow: 0 0 20px rgba(139, 172, 15, 0.3);
-    max-width: 95vw;
-    max-height: 95vh;
-    overflow: auto;
-    transform-origin: center;
-    /* 动态缩放 */
-    transform: scale(var(--game-scale));
 }
 
 .game-header {
@@ -122,10 +106,9 @@ body {
 
 .game-main {
     display: flex;
-    gap: 2.5vh;
+    gap: 25px;
     align-items: flex-start;
     justify-content: center;
-    flex-wrap: wrap;
 }
 
 .game-area {
@@ -133,11 +116,7 @@ body {
     border: 3px solid var(--nes-light-green);
     background-color: var(--nes-black);
     flex-shrink: 0;
-    /* 动态尺寸 */
-    width: var(--canvas-width);
-    height: var(--canvas-height);
-    max-width: 100%;
-    max-height: 80vh;
+    /* Game Area总高度：800px(Canvas) + 6px(边框) = 806px */
 }
 
 #gameCanvas {
@@ -146,11 +125,11 @@ body {
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
-    /* 动态Canvas尺寸 */
-    width: 100%;
-    height: 100%;
+    /* Canvas尺寸：400px × 800px */
     max-width: 100%;
-    max-height: 100%;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
 }
 
 .game-overlay {
@@ -180,13 +159,40 @@ body {
     font-weight: bold;
 }
 
-/* 精确计算的右侧面板布局 */
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .game-over-container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .game-over-title {
+        font-size: 2em;
+    }
+    
+    .final-score {
+        font-size: 1.8em;
+    }
+    
+    .score-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .statistics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+
+}
+
+/* 精确计算的右侧面板布局 - 总高度806px */
 .game-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    width: var(--sidebar-width);
+    gap: 20px; /* 调整间距为20px */
+    width: 280px;
     flex-shrink: 0;
+    /* 右侧面板总高度：140 + 20 + 224 + 20 + 350 = 754px */
 }
 
 .next-piece-section {
@@ -195,10 +201,11 @@ body {
     border-radius: 4px;
     padding: 15px;
     text-align: center;
-    height: 140px;
+    height: 140px; /* 调整高度：140px */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    /* NEXT窗口总高度：140px */
 }
 
 .next-label {
@@ -218,7 +225,8 @@ body {
     width: 80px;
     height: 80px;
     margin: 0 auto;
-    margin-top: -10px;
+    margin-top: -10px; /* 向上移动10px */
+    /* Canvas尺寸：80px × 80px */
 }
 
 .controls-section {
@@ -226,9 +234,10 @@ body {
     border: 2px solid var(--nes-light-green);
     border-radius: 4px;
     padding: 20px;
-    height: 224px;
+    height: 224px; /* 减少20%：从280px减少到224px */
     display: flex;
     flex-direction: column;
+    /* CONTROLS窗口总高度：224px */
 }
 
 .controls-title {
@@ -243,12 +252,12 @@ body {
 .control-item {
     display: grid;
     grid-template-columns: auto auto 1fr;
-    gap: 5px;
+    gap: 5px; /* 调整列间距为5px */
     align-items: center;
     font-size: 13px;
     color: var(--nes-white);
-    margin-bottom: 4px;
-    padding: 1.5px 0;
+    margin-bottom: 4px; /* 减少50%：从8px减少到4px */
+    padding: 1.5px 0; /* 减少50%：从3px减少到1.5px */
 }
 
 .control-key {
@@ -305,219 +314,23 @@ body {
     transform: translateY(1px);
 }
 
-/* 智能响应式设计 */
-/* 大屏幕设备 (1920px+) */
-@media (min-width: 1920px) {
-    :root {
-        --game-scale: 1.2;
-    }
-}
-
-/* 标准桌面设备 (1200px - 1919px) */
-@media (min-width: 1200px) and (max-width: 1919px) {
-    :root {
-        --game-scale: 1;
-    }
-}
-
-/* 小桌面设备 (1024px - 1199px) */
-@media (min-width: 1024px) and (max-width: 1199px) {
-    :root {
-        --game-scale: 0.9;
-    }
-}
-
-/* 平板设备 (768px - 1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
-    :root {
-        --game-scale: 0.8;
-        --canvas-width: 350px;
-        --canvas-height: 700px;
-        --sidebar-width: 240px;
-    }
-    
-    .game-main {
-        flex-direction: column;
-        align-items: center;
-        gap: 2vh;
-    }
-    
-    .game-sidebar {
-        flex-direction: row;
-        width: auto;
-        max-width: 100%;
-    }
-    
-    .next-piece-section,
-    .controls-section {
-        flex: 1;
-        min-width: 120px;
-    }
-}
-
-/* 手机设备 (480px - 767px) */
-@media (min-width: 480px) and (max-width: 767px) {
-    :root {
-        --game-scale: 0.7;
-        --canvas-width: 300px;
-        --canvas-height: 600px;
-        --sidebar-width: 200px;
-    }
-    
-    .game-main {
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5vh;
-    }
-    
-    .game-sidebar {
-        flex-direction: row;
-        width: auto;
-        max-width: 100%;
-        gap: 1vh;
-    }
-    
-    .next-piece-section,
-    .controls-section {
-        flex: 1;
-        min-width: 100px;
-    }
-    
-    .game-header {
-        flex-direction: column;
-        gap: 1vh;
-    }
-    
-    .score-section, .combo-section, .level-section, .lines-section {
-        margin: 0 0.5vh;
-    }
-    
-    .score-label, .combo-label, .level-label, .lines-label {
-        font-size: 16px;
-    }
-    
-    .score-value, .level-value, .lines-value, .combo-value {
-        font-size: 28px;
-    }
-}
-
-/* 小屏手机设备 (320px - 479px) */
-@media (min-width: 320px) and (max-width: 479px) {
-    :root {
-        --game-scale: 0.6;
-        --canvas-width: 250px;
-        --canvas-height: 500px;
-        --sidebar-width: 180px;
-    }
-    
-    .game-main {
-        flex-direction: column;
-        align-items: center;
-        gap: 1vh;
-    }
-    
-    .game-sidebar {
-        flex-direction: row;
-        width: auto;
-        max-width: 100%;
-        gap: 0.5vh;
-    }
-    
-    .next-piece-section,
-    .controls-section {
-        flex: 1;
-        min-width: 80px;
-    }
-    
-    .game-header {
-        flex-direction: column;
-        gap: 0.5vh;
-    }
-    
-    .score-section, .combo-section, .level-section, .lines-section {
-        margin: 0 0.25vh;
-    }
-    
-    .score-label, .combo-label, .level-label, .lines-label {
-        font-size: 14px;
-    }
-    
-    .score-value, .level-value, .lines-value, .combo-value {
-        font-size: 24px;
-    }
-}
-
-/* 超小屏设备 (< 320px) */
-@media (max-width: 319px) {
-    :root {
-        --game-scale: 0.5;
-        --canvas-width: 200px;
-        --canvas-height: 400px;
-        --sidebar-width: 150px;
-    }
-    
-    .game-main {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5vh;
-    }
-    
-    .game-sidebar {
-        flex-direction: row;
-        width: auto;
-        max-width: 100%;
-        gap: 0.25vh;
-    }
-    
-    .next-piece-section,
-    .controls-section {
-        flex: 1;
-        min-width: 60px;
-    }
-    
-    .game-header {
-        flex-direction: column;
-        gap: 0.25vh;
-    }
-    
-    .score-section, .combo-section, .level-section, .lines-section {
-        margin: 0 0.1vh;
-    }
-    
-    .score-label, .combo-label, .level-label, .lines-label {
-        font-size: 12px;
-    }
-    
-    .score-value, .level-value, .lines-value, .combo-value {
-        font-size: 20px;
-    }
-}
-
-/* 高DPI屏幕优化 */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    #gameCanvas, #nextCanvas {
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-    }
-}
-
-/* 横屏模式优化 */
-@media (orientation: landscape) and (max-height: 600px) {
-    :root {
-        --game-scale: 0.8;
-    }
-    
+/* 响应式设计 */
+@media (max-width: 768px) {
     .game-container {
-        padding: 1vh;
-    }
-    
-    .game-header {
-        margin-bottom: 10px;
         padding: 10px;
+        transform: scale(0.8);
+        transform-origin: center;
     }
     
     .game-main {
-        gap: 1vh;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .game-sidebar {
+        flex-direction: row;
+        gap: 10px;
     }
 }
 
@@ -833,5 +646,4 @@ body {
         opacity: 0;
     }
 }
-
 

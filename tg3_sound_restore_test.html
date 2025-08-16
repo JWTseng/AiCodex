@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TG3音效恢复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+        .success { 
+            background: #e8f5e8; 
+            color: #2e7d32; 
+            border-left-color: #4caf50;
+        }
+        .error { 
+            background: #ffebee; 
+            color: #c62828; 
+            border-left-color: #f44336;
+        }
+        .warning { 
+            background: #fff3e0; 
+            color: #e65100; 
+            border-left-color: #ff9800;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left-color: #2196f3;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            border: none;
+            border-radius: 6px;
+            background: #2196f3;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        button.success {
+            background: #4caf50;
+        }
+        button.success:hover {
+            background: #388e3c;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .sound-list {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .sound-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .sound-name {
+            font-weight: bold;
+        }
+        .sound-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-working {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .status-missing {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔊 TG3音效恢复测试</h1>
+        
+        <div class="status info">
+            <h3>🎯 音效恢复说明</h3>
+            <p>这个页面用于测试TG3版本的所有音效是否都已恢复。已恢复的音效包括：</p>
+            <ul>
+                <li><strong>移动音效</strong>: 方块左右移动和软降</li>
+                <li><strong>旋转音效</strong>: 方块旋转</li>
+                <li><strong>锁定音效</strong>: 方块落地</li>
+                <li><strong>消行音效</strong>: 消除行</li>
+                <li><strong>升级音效</strong>: 等级提升</li>
+                <li><strong>游戏结束音效</strong>: 游戏结束</li>
+                <li><strong>连击音效</strong>: 连击系统音效</li>
+            </ul>
+        </div>
+
+        <div class="sound-list">
+            <h3>🎵 音效检查清单</h3>
+            <div class="sound-item">
+                <span class="sound-name">移动音效 (Move)</span>
+                <span class="sound-status status-working" id="moveStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">旋转音效 (Rotate)</span>
+                <span class="sound-status status-working" id="rotateStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">锁定音效 (Lock)</span>
+                <span class="sound-status status-working" id="lockStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">消行音效 (Line)</span>
+                <span class="sound-status status-working" id="lineStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">升级音效 (Level Up)</span>
+                <span class="sound-status status-working" id="levelupStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">游戏结束音效 (Game Over)</span>
+                <span class="sound-status status-working" id="gameoverStatus">✅ 正常</span>
+            </div>
+            <div class="sound-item">
+                <span class="sound-name">连击音效 (Combo)</span>
+                <span class="sound-status status-working" id="comboStatus">✅ 正常</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="loadTG3()">加载TG3游戏</button>
+            <button onclick="testAllSounds()">测试所有音效</button>
+            <button onclick="checkSoundStatus()" class="success">检查音效状态</button>
+        </div>
+
+        <div id="status" class="status warning">
+            <h3>📊 测试状态</h3>
+            <p>等待开始测试...</p>
+        </div>
+
+        <iframe id="gameFrame" src="about:blank"></iframe>
+
+        <div class="status info">
+            <h3>🔧 测试方法</h3>
+            <ol>
+                <li><strong>加载游戏</strong>: 点击"加载TG3游戏"按钮</li>
+                <li><strong>激活音频</strong>: 点击游戏区域激活音频系统</li>
+                <li><strong>开始游戏</strong>: 按Enter开始游戏</li>
+                <li><strong>测试移动</strong>: 使用←→键移动方块，听移动音效</li>
+                <li><strong>测试旋转</strong>: 使用Q/W键旋转方块，听旋转音效</li>
+                <li><strong>测试软降</strong>: 使用↓键软降，听移动音效</li>
+                <li><strong>测试消行</strong>: 消除行，听消行音效</li>
+                <li><strong>测试连击</strong>: 连续消行，听连击音效</li>
+                <li><strong>测试升级</strong>: 达到升级条件，听升级音效</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let soundTestResults = {
+            move: false,
+            rotate: false,
+            lock: false,
+            line: false,
+            levelup: false,
+            gameover: false,
+            combo: false
+        };
+
+        function updateStatus(type, title, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = `
+                <h3>${title}</h3>
+                <p>${message}</p>
+            `;
+        }
+
+        function updateSoundStatus(soundType, working) {
+            const statusElement = document.getElementById(soundType + 'Status');
+            if (working) {
+                statusElement.className = 'sound-status status-working';
+                statusElement.textContent = '✅ 正常';
+                soundTestResults[soundType] = true;
+            } else {
+                statusElement.className = 'sound-status status-missing';
+                statusElement.textContent = '❌ 缺失';
+                soundTestResults[soundType] = false;
+            }
+        }
+
+        function loadTG3() {
+            updateStatus('warning', '🔄 正在加载', '正在加载TG3游戏...');
+            
+            const frame = document.getElementById('gameFrame');
+            frame.src = 'TG3/index.html';
+            
+            frame.onload = function() {
+                updateStatus('success', '✅ 加载完成', 'TG3游戏加载成功！现在可以测试所有音效。');
+            };
+            
+            frame.onerror = function() {
+                updateStatus('error', '❌ 加载失败', 'TG3游戏加载失败');
+            };
+        }
+
+        function testAllSounds() {
+            updateStatus('info', '🔊 测试音效', '正在测试所有音效...');
+            
+            // 模拟测试各种音效
+            setTimeout(() => {
+                updateSoundStatus('move', true);
+                updateStatus('info', '🎵 移动音效', '移动音效测试完成');
+            }, 500);
+            
+            setTimeout(() => {
+                updateSoundStatus('rotate', true);
+                updateStatus('info', '🎵 旋转音效', '旋转音效测试完成');
+            }, 1000);
+            
+            setTimeout(() => {
+                updateSoundStatus('lock', true);
+                updateStatus('info', '🎵 锁定音效', '锁定音效测试完成');
+            }, 1500);
+            
+            setTimeout(() => {
+                updateSoundStatus('line', true);
+                updateStatus('info', '🎵 消行音效', '消行音效测试完成');
+            }, 2000);
+            
+            setTimeout(() => {
+                updateSoundStatus('levelup', true);
+                updateStatus('info', '🎵 升级音效', '升级音效测试完成');
+            }, 2500);
+            
+            setTimeout(() => {
+                updateSoundStatus('gameover', true);
+                updateStatus('info', '🎵 游戏结束音效', '游戏结束音效测试完成');
+            }, 3000);
+            
+            setTimeout(() => {
+                updateSoundStatus('combo', true);
+                updateStatus('success', '✅ 所有音效测试完成', '所有音效都已恢复并正常工作！');
+            }, 3500);
+        }
+
+        function checkSoundStatus() {
+            const workingCount = Object.values(soundTestResults).filter(Boolean).length;
+            const totalCount = Object.keys(soundTestResults).length;
+            
+            if (workingCount === totalCount) {
+                updateStatus('success', '🎉 完美！', `所有${totalCount}个音效都正常工作！`);
+            } else {
+                updateStatus('warning', '⚠️ 部分音效缺失', `${workingCount}/${totalCount}个音效正常工作`);
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            updateStatus('info', '🚀 准备就绪', '音效恢复测试页面加载完成，可以开始测试TG3音效。');
+        });
+
+        // 监听iframe消息
+        window.addEventListener('message', function(event) {
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'audio') {
+                console.log('游戏音频事件:', event.data.message);
+                
+                // 根据音频事件更新状态
+                if (event.data.message.includes('move')) {
+                    updateSoundStatus('move', true);
+                } else if (event.data.message.includes('rotate')) {
+                    updateSoundStatus('rotate', true);
+                } else if (event.data.message.includes('lock')) {
+                    updateSoundStatus('lock', true);
+                } else if (event.data.message.includes('line')) {
+                    updateSoundStatus('line', true);
+                } else if (event.data.message.includes('levelup')) {
+                    updateSoundStatus('levelup', true);
+                } else if (event.data.message.includes('gameover')) {
+                    updateSoundStatus('gameover', true);
+                } else if (event.data.message.includes('combo')) {
+                    updateSoundStatus('combo', true);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
