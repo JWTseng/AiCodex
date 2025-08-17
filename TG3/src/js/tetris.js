@@ -1090,25 +1090,7 @@ class NESTetris {
     // 成功文案“Congratulations, you've earned a place.”：延长到5s
     // 文案“God is watching you...”采用打字机效果，逐字出现，打字结束后停留1.5s再淡出
     showUploadStatus(text, isError = false) {
-        let upload = document.getElementById('uploadStatus');
-        const overlayUpload = document.getElementById('uploadStatusInOverlay');
-        const overlay = document.getElementById('gameOverlay');
-        const gameOverTextEl = overlay ? overlay.querySelector('.game-over-text') : null;
-        // 优先使用覆盖层内的上传提示，在Game Over下方定位，不影响其布局
-        if (overlay && overlayUpload && gameOverTextEl) {
-            upload = overlayUpload;
-            // 计算Game Over文本位置并设置上传提示在其下方
-            try {
-                const rectOverlay = overlay.getBoundingClientRect();
-                const rectGo = gameOverTextEl.getBoundingClientRect();
-                const topWithin = (rectGo.bottom - rectOverlay.top) + 40; // 下偏移40px
-                const leftWithin = (rectOverlay.width / 2);
-                overlay.style.position = 'relative';
-                upload.style.left = leftWithin + 'px';
-                upload.style.top = topWithin + 'px';
-                upload.style.transform = 'translateX(-50%)';
-            } catch (_) {}
-        }
+        const upload = document.getElementById('uploadStatus');
         if (!upload) return;
 
         // 清理计时器/打字机
