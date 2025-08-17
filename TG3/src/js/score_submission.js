@@ -47,8 +47,8 @@ class ScoreSubmissionManager {
         const errors = [];
         
         // 检查必需字段
-        if (!scoreData.score || scoreData.score < 1 || scoreData.score > 999999) {
-            errors.push('Score must be between 1 and 999999');
+        if (!scoreData.score || scoreData.score < 1 || scoreData.score > 9999999) {
+            errors.push('Score must be between 1 and 9999999');
         }
         
         if (!scoreData.level || scoreData.level < 1 || scoreData.level > 99) {

@@ -44,7 +44,7 @@ class HighScoreManager {
             
             row.innerHTML = `
                 <td>${i + 1}</td>
-                <td>${score.score.toString().padStart(6, '0')}</td>
+                <td>${score.score.toString().padStart(7, '0')}</td>
                 <td>${score.level}</td>
                 <td>${score.lines}</td>
                 <td>${this.formatTime(score.duration)}</td>
@@ -419,6 +419,16 @@ class NESTetris {
         
         // 初始化高分记录显示
         this.highScoreManager.updateDisplay();
+
+        // 本地可视化测试：?fillscore=1 时将分数直设为 9,999,999 便于肉眼确认
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('fillscore') === '1') {
+                this.score = 9999999;
+                const scoreEl = document.getElementById('score');
+                if (scoreEl) scoreEl.textContent = this.score.toString().padStart(7, '0');
+            }
+        } catch (_) {}
         
         // 初始化输入管理器（模块化）
         this.inputManager = new InputManager({ enableKeyboard: true, enableGamepad: true, deadzone: 0.3 });
@@ -982,8 +992,8 @@ class NESTetris {
         }
         
         // 限制最大分数
-        if (this.score > 999999) {
-            this.score = 999999;
+        if (this.score > 9999999) {
+            this.score = 9999999;
         }
         
         // 触发连击特效（仅在 combo>=2 才显示，combo=1 作为预报态不显示）
@@ -1240,7 +1250,7 @@ class NESTetris {
     }
     
     updateUI() {
-        document.getElementById('score').textContent = this.score.toString().padStart(6, '0');
+        document.getElementById('score').textContent = this.score.toString().padStart(7, '0');
         document.getElementById('level').textContent = this.level.toString();
         document.getElementById('lines').textContent = this.linesClearedTotal.toString();
         

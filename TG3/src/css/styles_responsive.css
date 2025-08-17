@@ -88,6 +88,23 @@ body {
     margin-bottom: 20px;
 }
 
+/* Beta 顶角色带（右上角）*/
+body.is-beta::after {
+    content: "BETA";
+    position: fixed;
+    top: 14px; right: -40px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #7e57c2, #b388ff);
+    color: #fff;
+    padding: 8px 60px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.4);
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+    z-index: 100000;
+    pointer-events: none;
+}
+
 .leaderboard-title {
     color: #9bbc0f;
     font-size: 16px;
@@ -254,7 +271,7 @@ body {
 /* 列宽设置 */
 .rank-col { width: 40px; }
 .name-col { width: 120px; }
-.score-col { width: 80px; }
+.score-col { width: 104px; }
 .level-col { width: 50px; }
 .lines-col { width: 50px; }
 .time-col { width: 60px; }

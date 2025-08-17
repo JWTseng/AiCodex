@@ -164,6 +164,17 @@ class TetrisWorldLeaderboard {
     // 从Google Apps Script API获取世界排行榜数据
     async fetchWorldScores() {
         try {
+            // 本地可视化测试：?mock7=1 强制使用带有7位分数的样本数据
+            try {
+                const url = new URL(window.location.href);
+                if (url.searchParams.get('mock7') === '1') {
+                    return [
+                        { name: 'Champion', score: 9999999, level: 99, lines: 999, duration: 360000 },
+                        { name: 'RunnerUp', score: 8543210, level: 92, lines: 870, duration: 420000 },
+                        { name: 'PlayerX', score: 7000123, level: 80, lines: 700, duration: 300000 },
+                    ];
+                }
+            } catch (_) {}
             // Google Apps Script API URL
             const API_URL = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
             
@@ -233,7 +244,7 @@ class TetrisWorldLeaderboard {
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${score.name}</td>
-                    <td>${score.score.toString().padStart(6, '0')}</td>
+                    <td>${score.score.toString().padStart(7, '0')}</td>
                     <td>${score.level}</td>
                     <td>${score.lines}</td>
                     <td>${this.formatTime(score.duration)}</td>
