@@ -288,16 +288,20 @@
                 resultElement.className = 'status success';
                 resultElement.textContent = `✅ 播放成功 - 延迟: ${latency.toFixed(2)}ms`;
                 
-                statusElement.textContent = '✅ 已对齐';
-                statusElement.style.color = '#8bac0f';
+                if (statusElement) {
+                    statusElement.textContent = '✅ 已对齐';
+                    statusElement.style.color = '#8bac0f';
+                }
                 
                 testResults[type] = { success: true, latency };
             } catch (error) {
                 resultElement.className = 'status error';
                 resultElement.textContent = `❌ 播放失败: ${error.message}`;
                 
-                statusElement.textContent = '❌ 未对齐';
-                statusElement.style.color = '#ff6b6b';
+                if (statusElement) {
+                    statusElement.textContent = '❌ 未对齐';
+                    statusElement.style.color = '#ff6b6b';
+                }
                 
                 testResults[type] = { success: false, error: error.message };
             }
