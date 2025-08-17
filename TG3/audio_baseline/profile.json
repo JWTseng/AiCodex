@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "version": 1,
+    "date": "2025-08-17",
+    "source": "Aligned to online version af9e9a7"
+  },
+  "audioContext": {
+    "latencyHint": "interactive",
+    "sampleRate": 48000
+  },
+  "volumes": {
+    "master": 0.3,
+    "music": 0.3,
+    "sfx": 0.8
+  },
+  "switches": {
+    "musicEnabled": false,
+    "sfxEnabled": true
+  },
+  "throttle": {
+    "minPlayInterval": 0.005,
+    "moveSFXInterval": 0.03
+  },
+  "legacyProfile": {
+    "move":    { "freq": 600, "duration": 0.08, "volume": 0.20, "type": "sine",     "simple": true },
+    "rotate":  { "freq": 800, "duration": 0.10, "volume": 0.25, "type": "triangle", "simple": true },
+    "lock":    { "freq": 200, "duration": 0.15, "volume": 0.30, "type": "sine",     "simple": true },
+    "line":    { "duration": 0.20, "volume": 0.40, "type": "sine",    "complex": true, "freqPath": [1000, 1500] },
+    "levelup": { "duration": 0.50, "volume": 0.50, "type": "sine",    "complex": true, "freqPath": [500, 800, 1200] },
+    "gameover":{ "duration": 0.60, "volume": 0.60, "type": "sine",    "complex": true, "freqPath": [300, 200, 80] }
+  }
+}
