@@ -470,6 +470,43 @@ class GlobalAudioManager {
                 noise.start(now);
                 noise.stop(now + noiseDur);
 
+                // 高频“snap”噪声：2kHz 短促空气感
+                {
+                    const snapDur = 0.02;
+                    const nbuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * snapDur), ctx.sampleRate);
+                    const nch = nbuf.getChannelData(0);
+                    for (let i = 0; i < nch.length; i++) nch[i] = (Math.random() * 2 - 1) * 0.7;
+                    const snap = ctx.createBufferSource();
+                    snap.buffer = nbuf;
+                    const bp2 = ctx.createBiquadFilter();
+                    bp2.type = 'bandpass';
+                    bp2.frequency.setValueAtTime(2000, now);
+                    bp2.Q.setValueAtTime(1.2, now);
+                    const sg = ctx.createGain();
+                    const sVol = Math.min(0.22, this.sfxVolume * 0.35) * 0.5;
+                    sg.gain.setValueAtTime(0, now);
+                    sg.gain.linearRampToValueAtTime(sVol, now + 0.0015);
+                    sg.gain.exponentialRampToValueAtTime(0.001, now + snapDur);
+                    snap.connect(bp2).connect(sg).connect(slamBus);
+                    snap.start(now);
+                    snap.stop(now + snapDur);
+                }
+
+                // 高频金属“ping”层：更短
+                {
+                    const ping = ctx.createOscillator();
+                    const pg = ctx.createGain();
+                    ping.type = 'square';
+                    ping.frequency.setValueAtTime(2200, now);
+                    const pVol = Math.min(0.20, this.sfxVolume * 0.3) * 0.5;
+                    pg.gain.setValueAtTime(0, now);
+                    pg.gain.linearRampToValueAtTime(pVol, now + 0.001);
+                    pg.gain.exponentialRampToValueAtTime(0.001, now + 0.011);
+                    ping.connect(pg).connect(slamBus);
+                    ping.start(now);
+                    ping.stop(now + 0.012);
+                }
+
                 return;
             }
 
