@@ -1107,7 +1107,7 @@ class NESTetris {
         upload.style.opacity = '1';
 
         // 成功提示延长到5秒
-        const SUCCESS_TEXT = "Congratulations,!\nyou've earned a place.";
+        const SUCCESS_TEXT = "Congratulations, you've earned a place.";
         const TYPING_TEXT = 'God is watching you...';
 
         // 处理打字机效果
