@@ -22,6 +22,8 @@ class TetrisWorldLeaderboard {
         this.startAutoRefresh();
         // 初始化多语言标语
         try { this.initLocalizedMotto(); } catch (_) {}
+        // 标注Beta模式（通过 ?beta=1）
+        try { this.markIfBeta(); } catch (_) {}
     }
     
     bindEvents() {
@@ -39,6 +41,23 @@ class TetrisWorldLeaderboard {
                 this.loadWorldScores();
             }
         });
+    }
+
+    markIfBeta() {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('beta') === '1') {
+            const header = document.querySelector('.leaderboard-header');
+            if (!header) return;
+            let tag = document.getElementById('leaderboardBetaTag');
+            if (!tag) {
+                tag = document.createElement('div');
+                tag.id = 'leaderboardBetaTag';
+                tag.textContent = 'BETA';
+                tag.style.cssText = 'display:inline-block;margin-bottom:6px;padding:2px 8px;border:1px solid #ffc107;color:#ffc107;border-radius:10px;font-weight:700;letter-spacing:1px;';
+                header.insertBefore(tag, header.firstChild);
+            }
+            document.body.classList.add('is-beta');
+        }
     }
 
     // ===== 多语言标语 =====
