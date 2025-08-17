@@ -372,77 +372,101 @@ class GlobalAudioManager {
             if (type === 'hardlock') {
                 const ctx = this.audioContext;
                 const now = startTime;
-                
-                // 主低频：更低、更长的下滑，带低搁架增强
+
+                // 局部总线与压缩器：允许整体推大而不削波
+                const slamBus = ctx.createGain();
+                slamBus.gain.setValueAtTime(1.0, now);
+                const comp = ctx.createDynamicsCompressor();
+                comp.threshold.setValueAtTime(-18, now);
+                comp.knee.setValueAtTime(24, now);
+                comp.ratio.setValueAtTime(4, now);
+                comp.attack.setValueAtTime(0.003, now);
+                comp.release.setValueAtTime(0.25, now);
+                slamBus.connect(comp).connect(this.sfxGain);
+
+                // 主低频：更低、更长 + 低搁架强化
                 const mainOsc = ctx.createOscillator();
                 const mainGain = ctx.createGain();
                 const lowShelf = ctx.createBiquadFilter();
                 const mainLP = ctx.createBiquadFilter();
                 lowShelf.type = 'lowshelf';
-                lowShelf.frequency.setValueAtTime(140, now);
-                lowShelf.gain.setValueAtTime(9, now); // 强化低频
+                lowShelf.frequency.setValueAtTime(120, now);
+                lowShelf.gain.setValueAtTime(15, now); // 更强低频
                 mainLP.type = 'lowpass';
-                mainLP.frequency.setValueAtTime(800, now);
+                mainLP.frequency.setValueAtTime(700, now);
                 mainLP.Q && mainLP.Q.setValueAtTime(0.7, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
-                mainOsc.frequency.exponentialRampToValueAtTime(80, now + 0.34);
-                const mainVol = Math.min(0.72, this.sfxVolume * 0.9);
+                mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.42);
+                const mainVol = Math.min(0.95, this.sfxVolume * 1.1);
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
-                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
-                mainOsc.connect(lowShelf).connect(mainLP).connect(mainGain).connect(this.sfxGain);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+                mainOsc.connect(lowShelf).connect(mainLP).connect(mainGain).connect(slamBus);
                 mainOsc.start(now);
-                mainOsc.stop(now + 0.38);
+                mainOsc.stop(now + 0.46);
 
-                // 次低频层：超低频补强，进一步增加“肚量”
+                // 次低频层（更可听）：方波带谐波，增强在普通设备上的可感知度
                 const subOsc = ctx.createOscillator();
                 const subGain = ctx.createGain();
                 const subLP = ctx.createBiquadFilter();
                 subLP.type = 'lowpass';
-                subLP.frequency.setValueAtTime(500, now);
-                subOsc.type = 'sine';
-                subOsc.frequency.setValueAtTime(120, now);
-                subOsc.frequency.exponentialRampToValueAtTime(60, now + 0.30);
-                const subVol = Math.min(0.55, this.sfxVolume * 0.75);
+                subLP.frequency.setValueAtTime(600, now);
+                subOsc.type = 'square';
+                subOsc.frequency.setValueAtTime(110, now);
+                subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.34);
+                const subVol = Math.min(0.60, this.sfxVolume * 0.85);
                 subGain.gain.setValueAtTime(0, now);
-                subGain.gain.linearRampToValueAtTime(subVol, now + 0.010);
-                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
-                subOsc.connect(subLP).connect(subGain).connect(this.sfxGain);
+                subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+                subOsc.connect(subLP).connect(subGain).connect(slamBus);
                 subOsc.start(now);
-                subOsc.stop(now + 0.34);
+                subOsc.stop(now + 0.38);
 
-                // 冲击瞬音：短三角波“砸落”点击（更高峰值）
+                // 冲击瞬音：短三角波点击
                 const clickOsc = ctx.createOscillator();
                 const clickGain = ctx.createGain();
                 clickOsc.type = 'triangle';
-                clickOsc.frequency.setValueAtTime(600, now);
+                clickOsc.frequency.setValueAtTime(650, now);
                 clickGain.gain.setValueAtTime(0, now);
-                clickGain.gain.linearRampToValueAtTime(Math.min(0.42, this.sfxVolume * 0.6), now + 0.002);
-                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-                clickOsc.connect(clickGain).connect(this.sfxGain);
+                clickGain.gain.linearRampToValueAtTime(Math.min(0.48, this.sfxVolume * 0.7), now + 0.002);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+                clickOsc.connect(clickGain).connect(slamBus);
                 clickOsc.start(now);
                 clickOsc.stop(now + 0.08);
 
-                // 短噪声“空气冲击”层：低频带通，模拟砸落扬尘气压
-                const noiseDur = 0.10;
+                // 第二击：30ms 后更低频的短击，增强“炸裂”层次
+                const click2Osc = ctx.createOscillator();
+                const click2Gain = ctx.createGain();
+                const t2 = now + 0.03;
+                click2Osc.type = 'triangle';
+                click2Osc.frequency.setValueAtTime(420, t2);
+                click2Gain.gain.setValueAtTime(0, t2);
+                click2Gain.gain.linearRampToValueAtTime(Math.min(0.32, this.sfxVolume * 0.5), t2 + 0.002);
+                click2Gain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.07);
+                click2Osc.connect(click2Gain).connect(slamBus);
+                click2Osc.start(t2);
+                click2Osc.stop(t2 + 0.08);
+
+                // 气压冲击层：更强的低频带通噪声
+                const noiseDur = 0.12;
                 const noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * noiseDur), ctx.sampleRate);
                 const data = noiseBuf.getChannelData(0);
                 for (let i = 0; i < data.length; i++) {
-                    data[i] = (Math.random() * 2 - 1) * 0.6; // 略降幅度，避免削波
+                    data[i] = (Math.random() * 2 - 1) * 0.8;
                 }
                 const noise = ctx.createBufferSource();
                 noise.buffer = noiseBuf;
                 const noiseBP = ctx.createBiquadFilter();
                 noiseBP.type = 'bandpass';
-                noiseBP.frequency.setValueAtTime(180, now);
-                noiseBP.Q.setValueAtTime(0.9, now);
+                noiseBP.frequency.setValueAtTime(160, now);
+                noiseBP.Q.setValueAtTime(0.8, now);
                 const noiseGain = ctx.createGain();
-                const noiseVol = Math.min(0.26, this.sfxVolume * 0.35);
+                const noiseVol = Math.min(0.35, this.sfxVolume * 0.5);
                 noiseGain.gain.setValueAtTime(0, now);
                 noiseGain.gain.linearRampToValueAtTime(noiseVol, now + 0.003);
-                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-                noise.connect(noiseBP).connect(noiseGain).connect(this.sfxGain);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                noise.connect(noiseBP).connect(noiseGain).connect(slamBus);
                 noise.start(now);
                 noise.stop(now + noiseDur);
 
