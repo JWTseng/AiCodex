@@ -3,35 +3,478 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tetris Start</title>
-    <link rel="stylesheet" href="styles_responsive.css" />
+    <title>Tetris TG3 测试中心</title>
+    <link rel="stylesheet" href="TG3/src/css/styles_responsive.css" />
     <style>
-        .start-container { max-width: 900px; margin: 40px auto; text-align: center; }
-        .title { font-size: 32px; color: #fff; margin-bottom: 20px; }
-        .desc { color: #cfe9cf; margin-bottom: 30px; }
-        .btn-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-        .start-btn { padding: 14px 24px; border: 2px solid #8bac0f; color: #fff; background: transparent; cursor: pointer; border-radius: 8px; font-weight: 700; }
-        .start-btn:hover { background: rgba(139,172,15,0.2); }
-        .section { margin-top: 36px; }
-        .card { padding: 12px 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #eaeaea; text-align: left; }
-        .card h3 { margin: 0 0 8px 0; color: #fff; }
-        .link { color: #fff; text-decoration: none; border-bottom: 1px dashed #fff; }
+        body {
+            background: #0f380f;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .start-container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            text-align: center; 
+        }
+        
+        .title { 
+            font-size: 36px; 
+            color: #fff; 
+            margin-bottom: 20px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .desc { 
+            color: #cfe9cf; 
+            margin-bottom: 30px; 
+            font-size: 18px;
+        }
+        
+        .btn-row { 
+            display: flex; 
+            gap: 16px; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+            margin-bottom: 30px;
+        }
+        
+        .start-btn { 
+            padding: 14px 24px; 
+            border: 2px solid #8bac0f; 
+            color: #fff; 
+            background: transparent; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .start-btn:hover { 
+            background: rgba(139,172,15,0.3); 
+            transform: translateY(-2px);
+        }
+        
+        .section { 
+            margin-top: 36px; 
+            text-align: left;
+        }
+        
+        .card { 
+            padding: 20px; 
+            border: 1px solid rgba(255,255,255,0.15); 
+            border-radius: 8px; 
+            color: #eaeaea; 
+            text-align: left; 
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .card h3 { 
+            margin: 0 0 15px 0; 
+            color: #8bac0f; 
+            font-size: 20px;
+        }
+        
+        .link { 
+            color: #8bac0f; 
+            text-decoration: none; 
+            border-bottom: 1px dashed #8bac0f; 
+            transition: all 0.3s ease;
+        }
+        
+        .link:hover {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-item {
+            background: rgba(139,172,15,0.1);
+            border: 1px solid rgba(139,172,15,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-item:hover {
+            background: rgba(139,172,15,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .test-item h4 {
+            color: #8bac0f;
+            margin: 0 0 10px 0;
+        }
+        
+        .test-item p {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #cfe9cf;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .success { 
+            background: rgba(76,175,80,0.2); 
+            color: #4caf50; 
+            border: 1px solid #4caf50; 
+        }
+        
+        .error { 
+            background: rgba(244,67,54,0.2); 
+            color: #f44336; 
+            border: 1px solid #f44336; 
+        }
+        
+        .warning { 
+            background: rgba(255,152,0,0.2); 
+            color: #ff9800; 
+            border: 1px solid #ff9800; 
+        }
+        
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #8bac0f;
+            border-radius: 8px;
+            background: #000;
+        }
+        
+        .console-output {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #333;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(139,172,15,0.2);
+            border: 1px solid #8bac0f;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .tab-btn.active {
+            background: rgba(139,172,15,0.4);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="start-container">
-        <div class="title">CLASSIC NES TETRIS</div>
-        <div class="desc">选择开始游戏或进入测试页面</div>
+        <div class="title">🎮 TETRIS TG3 测试中心</div>
+        <div class="desc">选择开始游戏或进入各种测试页面</div>
+        
         <div class="btn-row">
-            <a href="index.html" class="start-btn">进入游戏</a>
-            <a href="simple_gamepad_test.html" class="start-btn">手柄连接测试</a>
-            <a href="gamepad_test.html" class="start-btn">手柄输入详测</a>
+            <a href="TG3/index.html" class="start-btn">🎯 进入游戏</a>
+            <a href="TG3/tests/simple_gamepad_test.html" class="start-btn">🎮 手柄连接测试</a>
+            <a href="TG3/tests/gamepad_test.html" class="start-btn">🎮 手柄输入详测</a>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>📋 快速测试</h3>
+                <div class="test-grid">
+                    <div class="test-item">
+                        <h4>🎵 音频测试</h4>
+                        <p>测试TG3音频系统是否正常工作</p>
+                        <button onclick="loadTest('test/tg3_audio_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>⚡ 延迟测试</h4>
+                        <p>测试音频延迟和响应速度</p>
+                        <button onclick="loadTest('test/tg3_latency_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🔊 音效测试</h4>
+                        <p>测试各种音效和组合音效</p>
+                        <button onclick="loadTest('test/tg3_combo_sound_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🎮 经典音效</h4>
+                        <p>测试经典NES音效还原</p>
+                        <button onclick="loadTest('test/tg3_classic_sound_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>🔧 高级测试</h3>
+                <div class="test-grid">
+                    <div class="test-item">
+                        <h4>📊 参数列表</h4>
+                        <p>查看所有音频参数配置</p>
+                        <button onclick="loadTest('test/tg3_parameters_list.html')" class="start-btn">查看参数</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🔄 音效恢复</h4>
+                        <p>测试音效恢复功能</p>
+                        <button onclick="loadTest('test/tg3_sound_restore_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>💯 100%还原</h4>
+                        <p>测试100%音效还原度</p>
+                        <button onclick="loadTest('test/tg3_100_percent_restore_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>⚡ 超低延迟</h4>
+                        <p>测试超低延迟模式</p>
+                        <button onclick="loadTest('test/tg3_ultra_low_latency_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>🎯 专项测试</h3>
+                <div class="test-grid">
+                    <div class="test-item">
+                        <h4>⬇️ 软降测试</h4>
+                        <p>测试软降音效</p>
+                        <button onclick="loadTest('test/tg3_softdrop_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🎵 舒适音效</h4>
+                        <p>测试舒适模式音效</p>
+                        <button onclick="loadTest('test/tg3_comfortable_sound_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🎮 移动音效</h4>
+                        <p>测试移动音效</p>
+                        <button onclick="loadTest('test/tg3_classic_move_sound_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h4>🎯 最终测试</h4>
+                        <p>综合测试所有功能</p>
+                        <button onclick="loadTest('test/final_tg3_test.html')" class="start-btn">开始测试</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>🎮 内嵌测试</h3>
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="showTab('simple')">简单测试</button>
+                        <button class="tab-btn" onclick="showTab('audio')">音频测试</button>
+                        <button class="tab-btn" onclick="showTab('game')">游戏测试</button>
+                    </div>
+                    
+                    <div id="simple-tab" class="tab-content active">
+                        <div class="status warning">
+                            <h4>简单TG3测试步骤:</h4>
+                            <ol>
+                                <li>点击"加载TG3"按钮</li>
+                                <li>等待游戏加载完成</li>
+                                <li>点击游戏区域或按任意键激活音频</li>
+                                <li>按Enter开始游戏</li>
+                                <li>测试音效是否正常</li>
+                            </ol>
+                        </div>
+                        <button onclick="loadTG3()" class="start-btn">加载TG3</button>
+                        <button onclick="testAudio()" class="start-btn">测试音频</button>
+                        <button onclick="checkConsole()" class="start-btn">检查控制台</button>
+                        <div id="status" class="status warning">等待加载...</div>
+                    </div>
+                    
+                    <div id="audio-tab" class="tab-content">
+                        <div class="status warning">
+                            <h4>音频系统测试</h4>
+                            <p>测试TG3音频系统的各项功能</p>
+                        </div>
+                        <button onclick="testTG3Audio()" class="start-btn">测试TG3音频</button>
+                        <button onclick="loadTG3Game()" class="start-btn">加载TG3游戏</button>
+                        <button onclick="clearConsole()" class="start-btn">清空控制台</button>
+                        <div id="tg3AudioStatus" class="status warning">⏳ 正在检测TG3音频系统...</div>
+                    </div>
+                    
+                    <div id="game-tab" class="tab-content">
+                        <div class="status warning">
+                            <h4>游戏内嵌测试</h4>
+                            <p>在页面中直接运行TG3游戏进行测试</p>
+                        </div>
+                        <iframe id="gameFrame" class="game-frame" src="about:blank"></iframe>
+                    </div>
+                </div>
+                
+                <div class="console-output" id="consoleOutput"></div>
+            </div>
         </div>
 
         <div class="section card">
-            <h3>说明</h3>
-            <div>本页面用于集中入口与测试，便于在开始游戏前验证设备状态。</div>
+            <h3>📖 说明</h3>
+            <div>
+                <p>本页面是TG3项目的测试中心，提供以下功能：</p>
+                <ul>
+                    <li><strong>快速测试</strong>：常用的音频和延迟测试</li>
+                    <li><strong>高级测试</strong>：参数配置和特殊功能测试</li>
+                    <li><strong>专项测试</strong>：针对特定功能的测试</li>
+                    <li><strong>内嵌测试</strong>：在页面中直接进行测试</li>
+                </ul>
+                <p>所有测试文件已整理到 <code>test/</code> 文件夹中，便于管理和维护。</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        // 加载测试页面
+        function loadTest(url) {
+            window.open(url, '_blank');
+        }
+        
+        // 标签页切换
+        function showTab(tabName) {
+            // 隐藏所有标签页
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            
+            // 移除所有按钮的active类
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            
+            // 显示选中的标签页
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // 简单测试功能
+        function loadTG3() {
+            const status = document.getElementById('status');
+            const frame = document.getElementById('gameFrame');
+            
+            status.className = 'status warning';
+            status.innerHTML = '正在加载TG3...';
+            
+            frame.src = 'TG3/index.html';
+            
+            frame.onload = function() {
+                status.className = 'status success';
+                status.innerHTML = '✅ TG3加载完成！现在点击游戏区域或按键激活音频，然后按Enter开始游戏。';
+            };
+            
+            frame.onerror = function() {
+                status.className = 'status error';
+                status.innerHTML = '❌ TG3加载失败';
+            };
+        }
+        
+        function testAudio() {
+            const status = document.getElementById('status');
+            status.className = 'status warning';
+            status.innerHTML = '正在测试音频...';
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (audioContext.state === 'suspended') {
+                    status.innerHTML = '⚠️ 音频上下文被暂停，需要用户交互激活';
+                } else {
+                    status.className = 'status success';
+                    status.innerHTML = '✅ 音频上下文正常';
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = '❌ 音频测试失败: ' + error.message;
+            }
+        }
+        
+        function checkConsole() {
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.innerHTML = '控制台检查功能 - 请查看浏览器开发者工具的控制台输出';
+        }
+        
+        // 音频测试功能
+        function testTG3Audio() {
+            const status = document.getElementById('tg3AudioStatus');
+            status.className = 'status warning';
+            status.innerHTML = '正在测试TG3音频系统...';
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (audioContext.state === 'suspended') {
+                    status.innerHTML = '⚠️ 音频上下文被暂停，需要用户交互激活';
+                } else {
+                    status.className = 'status success';
+                    status.innerHTML = '✅ TG3音频系统正常';
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = '❌ TG3音频测试失败: ' + error.message;
+            }
+        }
+        
+        function loadTG3Game() {
+            const frame = document.getElementById('gameFrame');
+            frame.src = 'TG3/index.html';
+        }
+        
+        function clearConsole() {
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.innerHTML = '';
+        }
+        
+        // 页面加载时的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('TG3测试中心已加载');
+        });
+    </script>
 </body>
 </html>

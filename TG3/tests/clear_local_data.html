@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清空本地数据</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        button {
+            background-color: #f44336;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #d32f2f;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4285f4;
+        }
+        .success {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .data-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .data-item strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ 清空本地数据工具</h1>
+        
+        <div class="warning result">
+            <h3>⚠️ 警告：</h3>
+            <p>此操作将清空所有本地存储的游戏数据，包括：</p>
+            <ul>
+                <li>玩家名字</li>
+                <li>本地最高分</li>
+                <li>本地高分记录</li>
+                <li>游戏设置</li>
+            </ul>
+            <p><strong>此操作不可撤销！</strong></p>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="showCurrentData()">查看当前数据</button>
+            <button onclick="clearAllData()">清空所有数据</button>
+            <button onclick="clearPlayerData()">仅清空玩家数据</button>
+            <button onclick="clearScoreData()">仅清空分数数据</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>操作结果:</h3>
+            <div id="resultContent"></div>
+        </div>
+        
+        <div id="currentData" style="display: none;">
+            <h3>📊 当前本地数据:</h3>
+            <div id="dataContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 本地存储键列表
+        const storageKeys = {
+            playerData: ['playerName'],
+            scoreData: ['playerHighScore', 'tetrisHighScores'],
+            gameData: ['gameSettings', 'lastGameState'],
+            allData: ['playerName', 'playerHighScore', 'tetrisHighScores', 'gameSettings', 'lastGameState']
+        };
+        
+        // 显示当前数据
+        function showCurrentData() {
+            const dataDiv = document.getElementById('currentData');
+            const dataContent = document.getElementById('dataContent');
+            
+            let html = '';
+            
+            for (const [category, keys] of Object.entries(storageKeys)) {
+                if (category === 'allData') continue;
+                
+                html += `<h4>${getCategoryName(category)}:</h4>`;
+                
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    if (value) {
+                        try {
+                            const parsedValue = JSON.parse(value);
+                            html += `
+                                <div class="data-item">
+                                    <strong>${key}:</strong><br>
+                                    <div class="code-block">${JSON.stringify(parsedValue, null, 2)}</div>
+                                </div>
+                            `;
+                        } catch {
+                            html += `
+                                <div class="data-item">
+                                    <strong>${key}:</strong> ${value}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        html += `
+                            <div class="data-item">
+                                <strong>${key}:</strong> <em>未设置</em>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            dataContent.innerHTML = html;
+            dataDiv.style.display = 'block';
+        }
+        
+        // 获取分类名称
+        function getCategoryName(category) {
+            const names = {
+                playerData: '👤 玩家数据',
+                scoreData: '🏆 分数数据',
+                gameData: '🎮 游戏数据'
+            };
+            return names[category] || category;
+        }
+        
+        // 清空所有数据
+        function clearAllData() {
+            if (!confirm('确定要清空所有本地数据吗？此操作不可撤销！')) {
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            try {
+                let clearedCount = 0;
+                
+                storageKeys.allData.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+                
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultContent.innerHTML = `
+                    <p><strong>✅ 数据清空成功！</strong></p>
+                    <p>已清空 ${clearedCount} 个数据项</p>
+                    <p>页面将在3秒后自动刷新...</p>
+                `;
+                
+                // 3秒后刷新页面
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultContent.innerHTML = `
+                    <p><strong>❌ 清空失败</strong></p>
+                    <p>错误信息: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // 仅清空玩家数据
+        function clearPlayerData() {
+            if (!confirm('确定要清空玩家数据吗？')) {
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            try {
+                let clearedCount = 0;
+                
+                storageKeys.playerData.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+                
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultContent.innerHTML = `
+                    <p><strong>✅ 玩家数据清空成功！</strong></p>
+                    <p>已清空 ${clearedCount} 个数据项</p>
+                    <p>页面将在3秒后自动刷新...</p>
+                `;
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultContent.innerHTML = `
+                    <p><strong>❌ 清空失败</strong></p>
+                    <p>错误信息: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // 仅清空分数数据
+        function clearScoreData() {
+            if (!confirm('确定要清空分数数据吗？')) {
+                return;
+            }
+            
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            try {
+                let clearedCount = 0;
+                
+                storageKeys.scoreData.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+                
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultContent.innerHTML = `
+                    <p><strong>✅ 分数数据清空成功！</strong></p>
+                    <p>已清空 ${clearedCount} 个数据项</p>
+                    <p>页面将在3秒后自动刷新...</p>
+                `;
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultContent.innerHTML = `
+                    <p><strong>❌ 清空失败</strong></p>
+                    <p>错误信息: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // 页面加载完成后显示当前数据
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('本地数据清空工具已加载');
+            showCurrentData();
+        });
+    </script>
+</body>
+</html>

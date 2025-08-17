@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS绕过测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4285f4;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CORS绕过测试</h1>
+        
+        <button onclick="testDirectFetch()">直接Fetch测试</button>
+        <button onclick="testJSONP()">JSONP测试</button>
+        <button onclick="testImageProxy()">图片代理测试</button>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>测试结果:</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 直接Fetch测试
+        async function testDirectFetch() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultContent.innerHTML = '正在测试直接Fetch...\n';
+            
+            try {
+                const SPREADSHEET_ID = '17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU';
+                const query = encodeURIComponent('SELECT COUNT(*) FROM scores_raw');
+                const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tq=${query}&tqx=out:json`;
+                
+                resultContent.innerHTML += `URL: ${url}\n`;
+                
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                resultContent.innerHTML += `状态: ${response.status}\n`;
+                resultContent.innerHTML += `响应: ${text.substring(0, 200)}...\n`;
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ 直接Fetch成功\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 直接Fetch失败: ${error.message}\n`;
+            }
+        }
+        
+        // JSONP测试
+        function testJSONP() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultContent.innerHTML = '正在测试JSONP...\n';
+            
+            try {
+                const SPREADSHEET_ID = '17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU';
+                const query = encodeURIComponent('SELECT COUNT(*) FROM scores_raw');
+                const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tq=${query}&tqx=out:json`;
+                
+                resultContent.innerHTML += `URL: ${url}\n`;
+                
+                // 创建script标签
+                const script = document.createElement('script');
+                script.src = url;
+                
+                // 设置回调函数
+                window.googleCallback = function(data) {
+                    resultContent.innerHTML += `JSONP响应: ${JSON.stringify(data, null, 2)}\n`;
+                    resultDiv.className = 'result success';
+                    resultContent.innerHTML += '✅ JSONP成功\n';
+                    document.head.removeChild(script);
+                };
+                
+                script.onerror = function() {
+                    resultDiv.className = 'result error';
+                    resultContent.innerHTML += '❌ JSONP失败\n';
+                    document.head.removeChild(script);
+                };
+                
+                document.head.appendChild(script);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ JSONP测试失败: ${error.message}\n`;
+            }
+        }
+        
+        // 图片代理测试
+        function testImageProxy() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultContent.innerHTML = '正在测试图片代理...\n';
+            
+            try {
+                const SPREADSHEET_ID = '17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU';
+                const query = encodeURIComponent('SELECT COUNT(*) FROM scores_raw');
+                const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tq=${query}&tqx=out:json`;
+                
+                resultContent.innerHTML += `URL: ${url}\n`;
+                
+                // 使用图片标签绕过CORS
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = function() {
+                    resultContent.innerHTML += '✅ 图片代理成功\n';
+                    resultDiv.className = 'result success';
+                };
+                
+                img.onerror = function() {
+                    resultContent.innerHTML += '❌ 图片代理失败\n';
+                    resultDiv.className = 'result error';
+                };
+                
+                img.src = url;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 图片代理测试失败: ${error.message}\n`;
+            }
+        }
+    </script>
+</body>
+</html>

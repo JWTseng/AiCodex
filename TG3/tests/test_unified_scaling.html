@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统一缩放测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+            transform-origin: center center;
+            transform: scale(var(--game-scale, 1));
+            transition: transform 0.1s ease-out;
+        }
+        
+        .test-panel {
+            background: #333;
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 300px;
+            min-height: 400px;
+        }
+        
+        .test-panel.left {
+            background: #0f380f;
+            border-color: #8bac0f;
+        }
+        
+        .test-panel.right {
+            background: #306230;
+            border-color: #9bbc0f;
+        }
+        
+        .scale-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="scale-info" id="scaleInfo">
+        缩放比例: 1.0
+    </div>
+    
+    <div class="test-container">
+        <div class="test-panel left">
+            <h3>左侧面板（模拟排行榜）</h3>
+            <p>这是左侧面板，模拟世界排行榜区域。</p>
+            <p>当浏览器窗口大小改变时，整个容器会按比例缩放。</p>
+        </div>
+        
+        <div class="test-panel right">
+            <h3>右侧面板（模拟游戏区域）</h3>
+            <p>这是右侧面板，模拟游戏主区域。</p>
+            <p>两个面板会作为一个整体进行缩放和移动。</p>
+        </div>
+    </div>
+
+    <script>
+        class TestUnifiedScaling {
+            constructor() {
+                this.minScale = 0.1;
+                this.maxScale = 1.0;
+                this.padding = 40;
+                this.init();
+            }
+            
+            init() {
+                this.bindEvents();
+                this.updateScale();
+            }
+            
+            bindEvents() {
+                window.addEventListener('resize', () => {
+                    this.updateScale();
+                });
+                
+                window.addEventListener('load', () => {
+                    this.updateScale();
+                });
+                
+                document.addEventListener('DOMContentLoaded', () => {
+                    this.updateScale();
+                });
+            }
+            
+            updateScale() {
+                const container = document.querySelector('.test-container');
+                if (!container) return;
+                
+                const containerWidth = container.scrollWidth;
+                const containerHeight = container.scrollHeight;
+                
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                
+                const availableWidth = windowWidth - (this.padding * 2);
+                const availableHeight = windowHeight - (this.padding * 2);
+                
+                const scaleX = availableWidth / containerWidth;
+                const scaleY = availableHeight / containerHeight;
+                const scale = Math.min(scaleX, scaleY);
+                
+                const finalScale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+                
+                document.documentElement.style.setProperty('--game-scale', finalScale);
+                
+                // 更新显示信息
+                const scaleInfo = document.getElementById('scaleInfo');
+                if (scaleInfo) {
+                    scaleInfo.innerHTML = `
+                        缩放比例: ${finalScale.toFixed(3)}<br>
+                        容器尺寸: ${containerWidth} x ${containerHeight}<br>
+                        窗口尺寸: ${windowWidth} x ${windowHeight}<br>
+                        可用空间: ${availableWidth} x ${availableHeight}
+                    `;
+                }
+            }
+        }
+        
+        // 初始化测试
+        document.addEventListener('DOMContentLoaded', () => {
+            new TestUnifiedScaling();
+        });
+    </script>
+</body>
+</html>

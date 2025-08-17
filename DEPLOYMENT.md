@@ -6,10 +6,12 @@
 
 ### 访问地址
 - **主游戏页面**: https://jwtseng.github.io/AiCodex/
-- **游戏手柄测试**: https://jwtseng.github.io/AiCodex/gamepad_test.html
-- **简单手柄测试**: https://jwtseng.github.io/AiCodex/simple_gamepad_test.html
-- **清除分数页面**: https://jwtseng.github.io/AiCodex/clear-scores.html
-- **测试页面**: https://jwtseng.github.io/AiCodex/test.html
+- **开发者工具**: https://jwtseng.github.io/AiCodex/TG3/launcher.html
+- **游戏手柄测试**: https://jwtseng.github.io/AiCodex/TG3/tests/gamepad_test.html
+- **简单手柄测试**: https://jwtseng.github.io/AiCodex/TG3/tests/simple_gamepad_test.html
+- **清除分数页面**: https://jwtseng.github.io/AiCodex/TG3/clear-scores.html
+- **缩放测试**: https://jwtseng.github.io/AiCodex/TG3/tests/test_unified_scaling.html
+- **音频对比测试**: https://jwtseng.github.io/AiCodex/TG3/audio_comparison_test.html
 
 ## 🚀 部署状态
 

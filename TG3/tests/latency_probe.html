@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>输入-音频-动画 延迟测试</title>
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, Arial; background: #0f380f; color: #8bac0f; margin: 0; padding: 20px; }
+		.wrap { max-width: 900px; margin: 0 auto; background:#173a17; border:1px solid #305a30; border-radius: 8px; padding: 16px; }
+		h1 { margin: 0 0 12px; color: #fff; font-size: 20px; }
+		.row { display:flex; gap: 10px; align-items:center; margin: 10px 0; }
+		.btn { background:#8bac0f; color:#0f380f; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-weight:600; }
+		.btn:active { transform: translateY(1px); }
+		.kbd { background:#0f380f; border:1px solid #305a30; padding:4px 8px; border-radius:6px; }
+		.card { background:#0f380f; border:1px solid #305a30; border-radius:6px; padding:10px; margin-top:10px; }
+		.log { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; max-height: 220px; overflow:auto; background:#0a260a; padding:8px; border-radius:6px; }
+		.bad { color:#ff6b6b; }
+		.good { color:#6bff9b; }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<h1>输入→音频→动画 延迟测试</h1>
+		<div class="row">
+			<button class="btn" id="btn-activate">激活音频</button>
+			<div>按 <span class="kbd">J</span> 播放 move，按 <span class="kbd">K</span> 播放 rotate</div>
+		</div>
+		<div class="row">
+			<button class="btn" id="btn-clear">清空日志</button>
+			<a class="btn" href="../index.html">返回游戏</a>
+		</div>
+
+		<div class="card">
+			<div id="summary">等待测试...</div>
+		</div>
+		<div class="card">
+			<div class="log" id="log"></div>
+		</div>
+	</div>
+
+	<script src="../src/js/audio_manager.js"></script>
+	<script>
+		const audio = window.globalAudioManager;
+		const logEl = document.getElementById('log');
+		const summaryEl = document.getElementById('summary');
+
+		let lastKeyPerf = 0;
+		let lastRAF = 0;
+		let lastSFX = 0;
+		let sampleCount = 0;
+		let accKeyToSFX = 0;
+		let accKeyToRAF = 0;
+
+		function log(msg) {
+			const time = new Date().toLocaleTimeString();
+			logEl.innerHTML = `[${time}] ${msg}<br>` + logEl.innerHTML;
+		}
+
+		function updateSummary() {
+			if (sampleCount === 0) { summaryEl.textContent = '等待测试...'; return; }
+			const avgKeyToSFX = (accKeyToSFX / sampleCount).toFixed(2);
+			const avgKeyToRAF = (accKeyToRAF / sampleCount).toFixed(2);
+			summaryEl.innerHTML = `样本: ${sampleCount} 次 | 平均 Key→SFX: <b>${avgKeyToSFX}ms</b> | 平均 Key→RAF: <b>${avgKeyToRAF}ms</b>`;
+		}
+
+		// 探针：SFX 调度开始
+		audio.onSFXStart = ({ type, audioTime, perfNow }) => {
+			lastSFX = perfNow;
+			const keyToSFX = perfNow - lastKeyPerf;
+			accKeyToSFX += keyToSFX;
+			log(`SFX '${type}' 调度: key→sfx=${keyToSFX.toFixed(2)}ms (ctx=${audioTime.toFixed(3)}s)`);
+			updateSummary();
+		};
+
+		// 记录下一帧的RAF时间
+		function tick(ts) {
+			lastRAF = ts;
+			requestAnimationFrame(tick);
+		}
+		requestAnimationFrame(tick);
+
+		document.getElementById('btn-activate').addEventListener('click', async () => {
+			await audio.ensureAudioReady();
+			audio.primeAudio();
+			log('音频已激活并预热');
+		});
+
+		document.getElementById('btn-clear').addEventListener('click', () => {
+			logEl.innerHTML = '';
+			summaryEl.textContent = '等待测试...';
+			sampleCount = accKeyToSFX = accKeyToRAF = 0;
+		});
+
+		// 键盘监听
+		window.addEventListener('keydown', (e) => {
+			if (e.repeat) return;
+			if (e.key === 'j' || e.key === 'J') {
+				lastKeyPerf = performance.now();
+				sampleCount++;
+				audio.playSFX('move');
+				const keyToRAF = lastRAF - lastKeyPerf;
+				accKeyToRAF += keyToRAF;
+				log(`按键 'J': key→raf=${keyToRAF.toFixed(2)}ms`);
+				updateSummary();
+			}
+			if (e.key === 'k' || e.key === 'K') {
+				lastKeyPerf = performance.now();
+				sampleCount++;
+				audio.playSFX('rotate');
+				const keyToRAF = lastRAF - lastKeyPerf;
+				accKeyToRAF += keyToRAF;
+				log(`按键 'K': key→raf=${keyToRAF.toFixed(2)}ms`);
+				updateSummary();
+			}
+		});
+	</script>
+</body>
+</html>

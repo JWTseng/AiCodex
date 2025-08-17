@@ -97,109 +97,109 @@ class GameTimer {
     }
 }
 
-// 连击系统 - 动态累计窗口版本
+// 连击系统 - 完整重构版本
 class ComboSystem {
     constructor() {
-        // 配置（可后续抽到全局配置）
-        this.cdForLinesMs = { 1: 5000, 2: 6000, 3: 7000, 4: 8000 };
-        this.maxWindowMs = 30000; // 30秒上限
-        this.clutchThresholdMs = 90; // 压哨阈值 0.09s
-        this.maxCombo = 999;
-
-        // 状态
-        this.comboCount = 0;
-        this.remainingMs = 0;   // 窗口剩余时间（ms）
-        this.timerActive = false;
-        this.lastTickMs = 0;    // 上一次tick时间
-
-        // 特效状态
-        this.lastEffectComboCount = 0;
-        this.isEffectPlaying = false;
+        // 核心状态
+        this.comboCount = 0;           // 当前连击数
+        this.lastClearTime = 0;        // 上次消除时间戳
+        this.comboWindow = 10000;      // 连击时间窗口（10秒）
+        this.maxCombo = 999;           // 最大连击数
+        
+        // 特效状态管理
+        this.lastEffectComboCount = 0; // 上次触发特效的连击数
+        this.isEffectPlaying = false;  // 特效是否正在播放
+        
+        // 计时器状态
+        this.timerActive = false;      // 计时器是否激活
+        this.timerStartTime = 0;       // 计时器开始时间
     }
-
-    // 在消行时调用，返回信息对象
-    // linesCleared: 1..4, nowMs: 当前毫秒
-    onLinesCleared(linesCleared, nowMs) {
-        const addMs = this.cdForLinesMs[Math.min(Math.max(linesCleared,1),4)] || 0;
-        const wasActive = this.timerActive && this.remainingMs >= 0;
-        const isClutch = wasActive && this.remainingMs <= this.clutchThresholdMs;
-
-        if (!wasActive || this.remainingMs < 0) {
-            // 新连击
-            this.comboCount = 1;
-            this.remainingMs = Math.min(addMs, this.maxWindowMs);
+    
+    // 检查并更新连击
+    checkCombo(currentTime) {
+        if (currentTime - this.lastClearTime < this.comboWindow) {
+            // 在10秒内，连击累加
+            this.comboCount++;
+            this.comboCount = Math.min(this.comboCount, this.maxCombo);
+            // 重新计时：重置计时器开始时间
             this.timerActive = true;
+            this.timerStartTime = currentTime;
+            return true;
         } else {
-            // 累计窗口并叠加连击
-            this.comboCount = Math.min(this.comboCount + 1, this.maxCombo);
-            this.remainingMs = Math.min(this.remainingMs + addMs, this.maxWindowMs);
-        }
-
-        this.lastTickMs = nowMs;
-
-        return {
-            isCombo: true,
-            addedMs: addMs,
-            newRemainingMs: this.remainingMs,
-            isClutch
-        };
-    }
-
-    // 每帧播放状态下调用
-    tick(nowMs) {
-        if (!this.timerActive || this.comboCount <= 0) return;
-        if (!this.lastTickMs) {
-            this.lastTickMs = nowMs; return;
-        }
-        const delta = nowMs - this.lastTickMs;
-        this.remainingMs -= delta;
-        this.lastTickMs = nowMs;
-        if (this.remainingMs < 0) {
-            this.remainingMs = -1; // 方便区分过期
-            this.timerActive = false;
-            this.comboCount = 0;
-            // 重置特效门槛，确保下一轮 combo=2 能激活
-            this.lastEffectComboCount = 0;
-            this.isEffectPlaying = false;
-            // 清理UI
-            this.clearUI();
+            // 超过10秒，重置连击为1
+            this.comboCount = 1;
+            this.timerActive = true;
+            this.timerStartTime = currentTime;
+            this.lastEffectComboCount = 0; // 重置特效记录
+            return false;
         }
     }
-
-    // 是否需要触发特效
+    
+    // 更新消除时间
+    updateClearTime(currentTime) {
+        this.lastClearTime = currentTime;
+    }
+    
+    // 检查是否需要触发特效
     shouldTriggerEffect() {
-        return this.comboCount > this.lastEffectComboCount &&
-               this.comboCount >= 2 &&
+        return this.comboCount > this.lastEffectComboCount && 
+               this.comboCount >= 2 && 
                !this.isEffectPlaying;
     }
+    
+    // 标记特效已触发
     markEffectTriggered() {
         this.lastEffectComboCount = this.comboCount;
         this.isEffectPlaying = true;
-        setTimeout(() => { this.isEffectPlaying = false; }, 1000);
+        
+        // 1秒后重置特效播放状态
+        setTimeout(() => {
+            this.isEffectPlaying = false;
+        }, 1000);
     }
-
-    getMultiplier() { return this.comboCount; }
-
-    getTimerInfo() {
-        const active = this.timerActive && this.comboCount > 0 && this.remainingMs >= 0;
-        const remaining = Math.max(0, this.remainingMs) / 1000;
-        return { remaining, active };
+    
+    // 获取连击倍数
+    getMultiplier() {
+        return this.comboCount;
     }
-
+    
+    // 获取计时器信息
+    getTimerInfo(currentTime) {
+        if (!this.timerActive || this.comboCount === 0) {
+            return { remaining: 10.00, active: false };
+        }
+        
+        const elapsed = currentTime - this.timerStartTime;
+        const remaining = Math.max(0, (this.comboWindow - elapsed) / 1000);
+        
+        return {
+            remaining: remaining,
+            active: this.timerActive && this.comboCount > 0
+        };
+    }
+    
+    // 重置系统
     reset() {
         this.comboCount = 0;
-        this.remainingMs = 0;
+        this.lastClearTime = 0;
         this.timerActive = false;
-        this.lastTickMs = 0;
+        this.timerStartTime = 0;
         this.lastEffectComboCount = 0;
         this.isEffectPlaying = false;
+        
+        // 清理UI元素
         this.clearUI();
     }
-
+    
+    // 清理UI元素
     clearUI() {
         const comboDisplay = document.getElementById('comboDisplay');
         const comboTimer = document.getElementById('comboTimer');
-        if (comboDisplay) comboDisplay.classList.remove('show');
+        
+        if (comboDisplay) {
+            comboDisplay.classList.remove('show');
+        }
+        
         if (comboTimer) {
             comboTimer.classList.remove('show');
             comboTimer.textContent = '';
@@ -224,13 +224,8 @@ class NESTetris {
         this.currentPiece = null;
         this.playfieldGrid = [];
         
-        // 音频系统 - 使用全局音频管理器
-        this.audio = window.globalAudioManager || new NESTetrisAudio();
-        // 调试开关（true时输出调试日志）
-        this.DEBUG = false;
-        if (window.GameLogger) {
-            window.GameLogger.event('init', { version: 'tg3', grid: [this.GRID_WIDTH, this.GRID_HEIGHT] });
-        }
+        // 音频系统
+        this.audio = new NESTetrisAudio();
         
         // 高分记录系统
         this.highScoreManager = new HighScoreManager();
@@ -238,12 +233,6 @@ class NESTetris {
         
         // 连击系统
         this.comboSystem = new ComboSystem();
-        // 连击倒计时显示与动画（UI层）
-        this.displayTimerSeconds = 0; // UI显示的剩余秒
-        this.timerAnim = {
-            remainingToAddSec: 0, // 待滚动增加到显示上的秒数
-            ratePerSec: 10,       // 每1秒增量以约0.1s完成 -> 1s/0.1s = 10 秒/秒
-        };
         
         // 时序系统 (60 FPS)
         this.frameCount = 0;
@@ -260,9 +249,9 @@ class NESTetris {
         
         // 线性加速系统
         this.softDropAcceleration = 0; // 软降加速度
-        this.accelerationRate = 4.8;   // 加速度增长率（每帧）- 提高一倍
-        this.maxAcceleration = 500;    // 最大加速度 - 提高一倍
-        this.baseSoftDropSpeed = 4;    // 基础软降速度倍数
+        this.accelerationRate = 2.4;   // 加速度增长率（每帧）- 提高一倍
+        this.maxAcceleration = 200;    // 最大加速度 - 提高一倍
+        this.baseSoftDropSpeed = 2;    // 基础软降速度倍数
         
         // 输入状态
         this.keys = {
@@ -274,27 +263,6 @@ class NESTetris {
             pause: false,
             select: false
         };
-        
-        // 输入管理器
-        this.inputManager = null;
-        this.prevInputState = {
-            enter: false,
-            left: false,
-            right: false,
-            down: false,
-            rotateCW: false,
-            rotateCCW: false,
-            pause: false,
-            reset: false,
-            musicToggle: false,
-            softDrop: false,
-            hardDrop: false
-        };
-        // 最近一次锁定原因：'gravity' | 'soft' | 'hard'
-        this.lockCause = 'gravity';
-        
-        // 是否至少开始过一局（用于控制 NEW 按钮初始禁用状态）
-        this.hasStartedAtLeastOnce = false;
         
         // 重力表 (每单元格帧数)
         this.gravityTable = [
@@ -420,18 +388,11 @@ class NESTetris {
         // 初始化高分记录显示
         this.highScoreManager.updateDisplay();
         
-        // 初始化输入管理器（模块化）
-        this.inputManager = new InputManager({ enableKeyboard: true, enableGamepad: true, deadzone: 0.3 });
-        
         // 绑定事件
         this.bindEvents();
         
         // 开始游戏循环
         this.gameLoop();
-        if (window.GameLogger) window.GameLogger.event('loop-started');
-
-        // 初始化 NEW 按钮状态（未开始过任意一局时禁用）
-        this.updateNewButtonState();
     }
     
     initPlayfield() {
@@ -446,202 +407,114 @@ class NESTetris {
     }
     
     bindEvents() {
-        // 按钮事件
-        const startPauseBtn = document.getElementById('startPauseBtn');
-        if (startPauseBtn) {
-            startPauseBtn.addEventListener('click', () => {
-                // 开始前显式预加载音频，杜绝首帧延迟
-                if (this.audio && this.audio.preloadForGameStart) {
-                    this.audio.preloadForGameStart();
-                }
-                if (this.gameState === 'stopped' || this.gameState === 'gameOver') {
-                    this.startGame();
-                    startPauseBtn.textContent = 'PAUSE';
-                } else if (this.gameState === 'playing') {
-                    this.togglePause();
-                    startPauseBtn.textContent = 'RESUME';
-                } else if (this.gameState === 'paused') {
-                    this.togglePause();
-                    startPauseBtn.textContent = 'PAUSE';
-                }
-            });
-        }
-        // NEW按钮：随时开始新局（相当于reset+start）
-        const newBtn = document.getElementById('newBtn');
-        if (newBtn) {
-            newBtn.addEventListener('click', () => {
-                this.resetGame();
-                // 重置后按钮回到 START
-                const sp = document.getElementById('startPauseBtn');
-                if (sp) sp.textContent = 'START';
-            });
-        }
+        // 键盘事件
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
         
-        // 音频激活事件 - 确保用户交互后激活音频
-        document.addEventListener('click', () => this.activateAudio());
-        document.addEventListener('keydown', () => this.activateAudio());
+        // 按钮事件
+        document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+        document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
+        document.getElementById('resetBtn').addEventListener('click', () => this.resetGame());
         
         // 音频控制事件 - 现在在start.html中处理
         // this.bindAudioControls();
     }
     
-    // 激活音频系统
-    activateAudio() {
-        if (this.audio && this.audio.audioContext) {
-            if (this.audio.audioContext.state === 'suspended') {
-                this.audio.audioContext.resume().then(() => {
-                    if (this.DEBUG) console.log('音频上下文已激活');
-                    if (window.GameLogger) window.GameLogger.info('audio-resumed');
-                }).catch(error => {
-                    if (this.DEBUG) console.log('音频上下文激活失败:', error);
-                    if (window.GameLogger) window.GameLogger.error('audio-resume-failed', { error: String(error) });
-                });
-            }
-        }
-    }
-    
-    handleInput() {
-        if (!this.inputManager) return;
-        
-        let inputState = this.inputManager.getInputState();
-        // 在手柄刚连接/断开后的短时间窗口内，忽略来自手柄的瞬时按键抖动
-        if (this.inputManager.justChangedConnection && this.inputManager.justChangedConnection(800)) {
-            inputState = {
-                enter: false,
-                left: false,
-                right: false,
-                down: false,
-                rotateCW: false,
-                rotateCCW: false,
-                pause: false,
-                reset: false,
-                musicToggle: false,
-                softDrop: false
-            };
-        }
-        
-        // 回车键开始游戏 - 在任何状态下都可以工作（边沿触发）
-        if (inputState.enter && !this.prevInputState.enter) {
+    handleKeyDown(e) {
+        // 回车键开始游戏 - 在任何状态下都可以工作
+        if (e.code === 'Enter') {
             if (this.gameState === 'stopped' || this.gameState === 'gameOver') {
                 this.startGame();
-                this.prevInputState = { ...inputState };
                 return;
             }
         }
         
-        // 暂停键多功能处理 - 开始/暂停/继续（防误触：仅 playing/paused 接受；stopped/gameOver 交给 Enter）
-        if (inputState.pause && !this.prevInputState.pause) {
-            if (this.gameState === 'playing') {
+        // 空格键多功能处理 - 开始/暂停/继续
+        if (e.code === 'Space') {
+            if (this.gameState === 'stopped' || this.gameState === 'gameOver') {
+                // 开始游戏
+                this.startGame();
+            } else if (this.gameState === 'playing') {
                 // 暂停游戏
+                this.keys.pause = true;
                 this.togglePause();
             } else if (this.gameState === 'paused') {
                 // 继续游戏
+                this.keys.pause = true;
                 this.togglePause();
             }
-            this.prevInputState = { ...inputState };
             return;
         }
         
-        // 重置游戏
-        // 重置：仅暂停或游戏结束时允许，避免误触。长按机制在按钮层实现，这里只判断状态
-        if (inputState.reset && !this.prevInputState.reset) {
-            if (this.gameState === 'paused' || this.gameState === 'gameOver') {
-                this.resetGame();
-                this.prevInputState = { ...inputState };
-                return;
-            }
-        }
-        
-        // 音乐切换
-        if (inputState.musicToggle && !this.prevInputState.musicToggle) {
-            this.toggleMusicWithKeyboard();
-            this.prevInputState = { ...inputState };
-            return;
-        }
-        
-        // 其他输入只在游戏进行中有效
+        // 其他按键只在游戏进行中有效
         if (this.gameState !== 'playing') return;
         
-        // 边沿触发：以 prevInputState 为依据
-        const justPressedLeft = inputState.left && !this.prevInputState.left;
-        const justPressedRight = inputState.right && !this.prevInputState.right;
-        const justPressedDown = inputState.down && !this.prevInputState.down;
-        const justPressedRotateCW = inputState.rotateCW && !this.prevInputState.rotateCW;
-        const justPressedRotateCCW = inputState.rotateCCW && !this.prevInputState.rotateCCW;
-        const justPressedHardDrop = inputState.hardDrop && !this.prevInputState.hardDrop;
-
-        // 处理移动输入
-        if (justPressedLeft) {
-            this.dasDirection = -1;
-            this.dasTimer = 0;
-            this.dasCharged = false;
-            this.movePiece(-1, 0);
-            this.inputManager.triggerVibration('move');
+        switch(e.code) {
+            case 'ArrowLeft':
+                this.keys.left = true;
+                this.dasDirection = -1;
+                this.dasTimer = 0;
+                this.dasCharged = false;
+                // 立即执行一次移动
+                this.movePiece(-1, 0);
+                break;
+            case 'ArrowRight':
+                this.keys.right = true;
+                this.dasDirection = 1;
+                this.dasTimer = 0;
+                this.dasCharged = false;
+                // 立即执行一次移动
+                this.movePiece(1, 0);
+                break;
+            case 'ArrowDown':
+                this.keys.down = true;
+                // 立即执行一次软降
+                this.movePiece(0, 1);
+                break;
+            case 'KeyQ':
+            case 'ArrowUp':
+                this.keys.rotateCW = true;
+                this.rotatePiece(1);
+                break;
+            case 'KeyW':
+                this.keys.rotateCCW = true;
+                this.rotatePiece(-1);
+                break;
+            case 'KeyR':
+                this.resetGame();
+                break;
+            case 'KeyM':
+                // M键切换音乐开关
+                this.toggleMusicWithKeyboard();
+                break;
         }
-        
-        if (justPressedRight) {
-            this.dasDirection = 1;
-            this.dasTimer = 0;
-            this.dasCharged = false;
-            this.movePiece(1, 0);
-            this.inputManager.triggerVibration('move');
-        }
-        
-        if (justPressedDown) {
-            this.movePiece(0, 1);
-            this.lockCause = 'soft';
-            this.inputManager.triggerVibration('drop');
-        }
-        
-        // 硬降（Hard Drop）：瞬间落到底并锁定
-        if (justPressedHardDrop && this.currentPiece) {
-            const dropPos = this.calculateDropPosition();
-            if (dropPos) {
-                this.currentPiece.x = dropPos.x;
-                this.currentPiece.y = dropPos.y;
-                this.currentPiece.rotation = dropPos.rotation;
-                // 锁定并结算
-                this.lockCause = 'hard';
-                this.lockPiece();
-                this.inputManager.triggerVibration('drop');
-                // 计分（现代规则可选）：每格+2分，这里保持NES传统不额外加分。若需要，解除下行注释并计算落差格数。
-                // const delta = dropPos.y - pieceStartY; this.score += delta * 2;
-            }
-        }
-
-        // 处理旋转输入
-        if (justPressedRotateCW) {
-            this.rotatePiece(1);
-            this.inputManager.triggerVibration('rotate');
-        }
-        
-        if (justPressedRotateCCW) {
-            this.rotatePiece(-1);
-            this.inputManager.triggerVibration('rotate');
-        }
-
-        // 连续态：用于重力和软降等
-        this.keys.down = inputState.down;
-        // 左右持续：用于DAS 判定
-        this.keys.left = inputState.left;
-        this.keys.right = inputState.right;
-        // 旋转持续置位（不影响边沿触发）
-        this.keys.rotateCW = inputState.rotateCW;
-        this.keys.rotateCCW = inputState.rotateCCW;
-
-        // 当左右释放时，复位 DAS 方向
-        if (!inputState.left && this.prevInputState.left && this.dasDirection === -1) {
-            this.dasDirection = 0;
-        }
-        if (!inputState.right && this.prevInputState.right && this.dasDirection === 1) {
-            this.dasDirection = 0;
-        }
-
-        // 保存本帧输入状态
-        this.prevInputState = { ...inputState };
     }
     
-
+    handleKeyUp(e) {
+        switch(e.code) {
+            case 'ArrowLeft':
+                this.keys.left = false;
+                if (this.dasDirection === -1) this.dasDirection = 0;
+                break;
+            case 'ArrowRight':
+                this.keys.right = false;
+                if (this.dasDirection === 1) this.dasDirection = 0;
+                break;
+            case 'ArrowDown':
+                this.keys.down = false;
+                break;
+            case 'KeyQ':
+            case 'ArrowUp':
+                this.keys.rotateCW = false;
+                break;
+            case 'KeyW':
+                this.keys.rotateCCW = false;
+                break;
+            case 'Space':
+                this.keys.pause = false;
+                break;
+        }
+    }
     
     // NES随机数生成器
     generateNextPiece() {
@@ -673,13 +546,7 @@ class NESTetris {
     }
     
     startGame() {
-        if (window.GameLogger) window.GameLogger.event('game-start');
         this.gameState = 'playing';
-        // 确保进入全新局：清理所有临时/残留UI与计时器
-        this.clearTransientUI();
-        // 记录已开始过至少一局，并更新 NEW 按钮可用性
-        this.hasStartedAtLeastOnce = true;
-        this.updateNewButtonState();
         this.score = 0;
         this.level = 0;
         this.linesClearedTotal = 0;
@@ -705,37 +572,35 @@ class NESTetris {
         // 启动游戏计时器
         this.gameTimer.start();
         
-        // 启动背景音乐（仅在后台预热，不阻塞SFX）
-        if (this.audio && this.audio.ensureAudioReady) {
-            this.audio.ensureAudioReady().then(() => {
-                if (this.audio.primeAudio) this.audio.primeAudio();
-                if (this.audio.playMusic) this.audio.playMusic('music1');
-            }).catch(() => {});
-        }
+        // 启动背景音乐
+        this.audio.resumeAudioContext();
+        this.audio.generateBackgroundMusic('music1');
         
         this.updateUI();
-        const sp = document.getElementById('startPauseBtn');
-        if (sp) sp.textContent = 'PAUSE';
-        this.hideGameOverlay();
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+        document.getElementById('gameOverlay').style.display = 'none';
     }
     
-    // 不自动开始游戏，保留接口以兼容旧调用
-    autoStart() {}
+    // 页面加载时自动开始游戏
+    autoStart() {
+        // 延迟一点时间确保页面完全加载
+        setTimeout(() => {
+            this.startGame();
+        }, 500);
+    }
     
     togglePause() {
         if (this.gameState === 'playing') {
             this.gameState = 'paused';
-            if (window.GameLogger) window.GameLogger.event('game-paused');
             // 暂停时重置连击
             this.comboSystem.reset();
         } else if (this.gameState === 'paused') {
             this.gameState = 'playing';
-            if (window.GameLogger) window.GameLogger.event('game-resumed');
         }
     }
     
     resetGame() {
-        if (window.GameLogger) window.GameLogger.event('game-reset');
         this.gameState = 'stopped';
         this.score = 0;
         this.level = 0;
@@ -752,16 +617,12 @@ class NESTetris {
         this.audio.stopMusic();
         
         this.updateUI();
-        const sp = document.getElementById('startPauseBtn');
-        if (sp) sp.textContent = 'START';
-        this.clearTransientUI();
-        this.hideGameOverlay();
-        // 保持 NEW 按钮在已开始过后可用
-        this.updateNewButtonState();
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('pauseBtn').disabled = true;
+        document.getElementById('gameOverlay').style.display = 'none';
     }
     
     spawnNewPiece() {
-        if (window.GameLogger) window.GameLogger.event('spawn', { next: this.nextPiece && this.nextPiece.name });
         this.currentPiece = {
             type: this.nextPiece,
             x: this.nextPiece.spawnX,
@@ -822,7 +683,7 @@ class NESTetris {
             this.currentPiece.x += dx;
             this.currentPiece.y += dy;
             
-            // 播放移动音效 - 恢复所有移动音效
+            // 播放移动音效
             if (dx !== 0 || dy !== 0) {
                 this.audio.playSFX('move');
             }
@@ -867,16 +728,8 @@ class NESTetris {
         // 更新统计
         this.piecesPlaced += pieceBlocks;
         
-        // 播放锁定音效（区分重力/软降/硬降）
-        if (this.lockCause === 'hard') {
-            this.audio.playSFX('hardlock');
-        } else if (this.lockCause === 'soft') {
-            this.audio.playSFX('softlock');
-        } else {
-            this.audio.playSFX('lock');
-        }
-        // 重置锁因
-        this.lockCause = 'gravity';
+        // 播放锁定音效
+        this.audio.playSFX('lock');
         
         this.clearLines();
         this.spawnNewPiece();
@@ -920,36 +773,19 @@ class NESTetris {
             
             // 播放消行音效
             this.audio.playSFX('line');
-            
-            // 触发手柄振动
-            if (this.inputManager) {
-                this.inputManager.triggerVibration('lineClear');
-            }
         }
     }
     
     updateScore(linesCleared, eliminatedRows = []) {
-        const nowMs = Date.now();
-        // 新的动态窗口：叠加CD并获取压哨判定
-        const lines = Math.max(1, Math.min(4, linesCleared));
-        const comboInfo = this.comboSystem.onLinesCleared(lines, nowMs);
-        const isCombo = true;
-        const isClutch = comboInfo.isClutch === true; // 0.00~0.09s 压哨
-        // 启动/叠加倒计时显示动画
-        const addedSec = (comboInfo.addedMs || 0) / 1000;
-        if (addedSec > 0) {
-            // 将当前模型剩余时间作为显示基线（避免显示落后模型过多）
-            this.displayTimerSeconds = Math.max(this.displayTimerSeconds, Math.max(0, this.comboSystem.remainingMs) / 1000);
-            this.timerAnim.remainingToAddSec = Math.min(
-                (this.timerAnim.remainingToAddSec || 0) + addedSec,
-                30 - this.displayTimerSeconds
-            );
-        } else {
-            // 没有增加，直接同步到模型（避免漂移）
-            this.displayTimerSeconds = Math.max(0, this.comboSystem.remainingMs) / 1000;
-        }
+        const currentTime = Date.now();
         
-        // 统计连击数据（内部统计，不影响显示规则）
+        // 检查连击
+        const isCombo = this.comboSystem.checkCombo(currentTime);
+        
+        // 更新消除时间
+        this.comboSystem.updateClearTime(currentTime);
+        
+        // 统计连击数据
         if (isCombo) {
             this.totalCombo += this.comboSystem.comboCount;
             this.comboCount++;
@@ -962,10 +798,7 @@ class NESTetris {
         const comboMultiplier = this.comboSystem.getMultiplier();
         
         // 最终得分
-        let finalScore = baseScore * levelMultiplier * comboMultiplier;
-        if (isClutch) {
-            finalScore *= 2; // 压哨×2
-        }
+        const finalScore = baseScore * levelMultiplier * comboMultiplier;
         this.score += finalScore;
         
         // 软降得分
@@ -978,16 +811,16 @@ class NESTetris {
             this.score = 999999;
         }
         
-        // 触发连击特效（仅在 combo>=2 才显示，combo=1 作为预报态不显示）
-        if (this.comboSystem.getMultiplier() >= 2 && this.comboSystem.shouldTriggerEffect()) {
-            if (this.DEBUG) console.log(`触发${this.comboSystem.comboCount}连击特效`);
-            this.triggerComboEffects(this.comboSystem.comboCount, { clutch: isClutch });
+        // 触发连击特效
+        if (this.comboSystem.shouldTriggerEffect()) {
+            console.log(`触发${this.comboSystem.comboCount}连击特效`);
+            this.triggerComboEffects(this.comboSystem.comboCount);
             this.comboSystem.markEffectTriggered();
         }
         
         // 调试信息
-        const timerInfo = this.comboSystem.getTimerInfo();
-        if (this.DEBUG) console.log(`消除${linesCleared}行，连击数${this.comboSystem.comboCount}，倍数x${comboMultiplier}，得分${finalScore}，剩余时间${timerInfo.remaining.toFixed(3)}秒，压哨${isClutch}`);
+        const timerInfo = this.comboSystem.getTimerInfo(currentTime);
+        console.log(`消除${linesCleared}行，连击数${this.comboSystem.comboCount}，倍数x${comboMultiplier}，得分${finalScore}，剩余时间${timerInfo.remaining.toFixed(3)}秒，是否连击${isCombo}`);
     }
     
 
@@ -1013,220 +846,13 @@ class NESTetris {
         const gameDuration = this.gameTimer.end();
         this.highScoreManager.addScore(this.score, this.level, this.linesClearedTotal, gameDuration);
         
-        // 提交成绩到全球排行榜
-        this.submitScoreToLeaderboard(gameDuration);
-        // 显示上传状态占位（提交中）
-        const overlay = document.getElementById('gameOverlay');
-        if (overlay) overlay.style.display = 'flex';
-        this.showUploadStatus('God is watching you...', false);
-        
         // 播放游戏结束音效
         this.audio.playSFX('gameover');
         this.audio.stopMusic();
         
-        // 触发手柄振动
-        if (this.inputManager) {
-            this.inputManager.triggerVibration('gameOver');
-        }
-        
         document.getElementById('gameOverlay').style.display = 'flex';
         document.getElementById('startBtn').disabled = false;
         document.getElementById('pauseBtn').disabled = true;
-    }
-    
-    // 提交成绩到全球排行榜
-    async submitScoreToLeaderboard(gameDuration) {
-        if (!window.scoreSubmissionManager) {
-            console.warn('Score submission manager not available');
-            return;
-        }
-        
-        try {
-            const scoreData = {
-                score: this.score,
-                level: this.level,
-                lines: this.linesClearedTotal,
-                duration: gameDuration * 1000, // 转换为毫秒
-                playerName: window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous'
-            };
-            
-            console.log('Submitting score to leaderboard:', scoreData);
-            
-            const result = await window.scoreSubmissionManager.submitScore(scoreData);
-            
-            if (result.success) {
-                console.log('Score submitted successfully');
-                
-                // 检查是否进入Top50并更新玩家名字显示
-                if (window.playerNameManager && window.playerNameManager.updateTop50Status) {
-                    const isInTop50 = await window.scoreSubmissionManager.isInTop50(this.score);
-                    window.playerNameManager.updateTop50Status(isInTop50);
-                }
-                
-                // 刷新排行榜
-                if (window.tetrisWorldLeaderboard) {
-                    window.tetrisWorldLeaderboard.loadWorldScores();
-                }
-                // 更新上传状态提示（成功）
-                this.showUploadStatus('Congratulations, you\'ve earned a place.', false);
-            } else {
-                console.error('Score submission failed:', result.error);
-                // 上传失败提示
-                this.showUploadStatus('You need to try harder.', true);
-            }
-        } catch (error) {
-            console.error('Error submitting score:', error);
-            // 上传错误提示
-            this.showUploadStatus('You need to try harder.', true);
-        }
-    }
-
-    // 显示上传状态
-    // 默认总显示时长：2.5s（2.0s后开始淡出，0.5s隐藏）
-    // 成功文案“Congratulations, you've earned a place.”：延长到5s
-    // 文案“God is watching you...”采用打字机效果，逐字出现，打字结束后停留1.5s再淡出
-    showUploadStatus(text, isError = false) {
-        const upload = document.getElementById('uploadStatus');
-        if (!upload) return;
-
-        // 清理计时器/打字机
-        if (this._uploadFadeTimer) clearTimeout(this._uploadFadeTimer);
-        if (this._uploadHideTimer) clearTimeout(this._uploadHideTimer);
-        if (this._typingInterval) clearInterval(this._typingInterval);
-
-        // 统一样式
-        if (isError) upload.classList.add('error'); else upload.classList.remove('error');
-        upload.style.display = 'block';
-        // 强制回流，确保过渡生效
-        // eslint-disable-next-line no-unused-expressions
-        upload.offsetHeight;
-        upload.style.opacity = '1';
-
-        // 成功提示延长到5秒
-        const SUCCESS_TEXT = "Congratulations, you've earned a place.";
-        const TYPING_TEXT = 'God is watching you...';
-
-        // 处理打字机效果
-        if (text === TYPING_TEXT) {
-            const fullText = TYPING_TEXT;
-            const typeSpeedMs = 70; // 每字符70ms，流畅不拖沓
-            const postHoldMs = 1500; // 打字结束后停留1.5s
-            upload.textContent = '';
-
-            let index = 0;
-            this._typingInterval = setInterval(() => {
-                index += 1;
-                upload.textContent = fullText.slice(0, index);
-                if (index >= fullText.length) {
-                    clearInterval(this._typingInterval);
-                    this._typingInterval = null;
-                    // 打字结束后等待再淡出
-                    this._uploadFadeTimer = setTimeout(() => {
-                        upload.style.opacity = '0';
-                    }, postHoldMs);
-                    this._uploadHideTimer = setTimeout(() => {
-                        upload.style.display = 'none';
-                        upload.style.opacity = '';
-                        upload.classList.remove('error');
-                    }, postHoldMs + 500);
-                }
-            }, typeSpeedMs);
-            return;
-        }
-
-        // 非打字机文案：立即显示完整文本并按时长淡出
-        upload.textContent = text;
-
-        // 基础显示总时长（含0.5s淡出）
-        let totalDurationMs = 2500; // 默认2.5s
-        if (!isError && text === SUCCESS_TEXT) {
-            totalDurationMs = 5000; // 成功提示延长到5s
-        }
-
-        const fadeStartMs = Math.max(0, totalDurationMs - 500);
-        this._uploadFadeTimer = setTimeout(() => {
-            upload.style.opacity = '0';
-        }, fadeStartMs);
-
-        this._uploadHideTimer = setTimeout(() => {
-            upload.style.display = 'none';
-            upload.style.opacity = '';
-            upload.classList.remove('error');
-        }, totalDurationMs);
-    }
-
-    // 隐藏游戏结束覆盖层并清理上传提示与计时器
-    hideGameOverlay() {
-        try {
-            const overlay = document.getElementById('gameOverlay');
-            const upload = document.getElementById('uploadStatus');
-            const gameOverText = overlay ? overlay.querySelector('.game-over-text') : null;
-
-            // 停止仍在进行的打字/淡出计时器，避免回退后又把提示显示回来
-            if (this._uploadFadeTimer) { clearTimeout(this._uploadFadeTimer); this._uploadFadeTimer = null; }
-            if (this._uploadHideTimer) { clearTimeout(this._uploadHideTimer); this._uploadHideTimer = null; }
-            if (this._typingInterval) { clearInterval(this._typingInterval); this._typingInterval = null; }
-
-            if (upload) {
-                upload.style.display = 'none';
-                upload.style.opacity = '';
-                upload.classList.remove('error');
-                upload.textContent = '';
-            }
-
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
-
-            if (gameOverText) {
-                // 确保下一次展示时仍可见（只隐藏 overlay，不单独隐藏文本）
-                // 这里不改 display，保持由 overlay 控制
-            }
-        } catch (_) {
-            // 忽略任何清理异常，避免阻断启动流程
-        }
-    }
-
-    // 根据是否至少开始过一局，控制 NEW 按钮可用性
-    updateNewButtonState() {
-        const newBtn = document.getElementById('newBtn');
-        if (!newBtn) return;
-        // 未开始过任何一局时禁用，开始过后始终可用
-        newBtn.disabled = !this.hasStartedAtLeastOnce;
-    }
-
-    // 清理所有临时/残留UI（确保新开局为全新状态）
-    clearTransientUI() {
-        try {
-            // 1) 覆盖层与上传提示（计时器/打字机在 hideGameOverlay 中清理，这里再兜底一次）
-            this.hideGameOverlay();
-
-            // 2) 移除连击粒子
-            const gameArea = document.querySelector('.game-area');
-            if (gameArea) {
-                const particles = gameArea.querySelectorAll('.combo-particle');
-                particles.forEach(p => p.remove());
-                // 3) 复位 game-area 位移（防屏幕震动残留）
-                gameArea.style.transform = 'translate(0, 0)';
-            }
-
-            // 4) 连击 UI 复位
-            const comboDisplay = document.getElementById('comboDisplay');
-            if (comboDisplay) {
-                comboDisplay.classList.remove('show');
-                comboDisplay.textContent = '';
-                comboDisplay.style.opacity = '';
-            }
-            const comboTimer = document.getElementById('comboTimer');
-            if (comboTimer) {
-                comboTimer.classList.remove('show');
-                comboTimer.textContent = '';
-                comboTimer.style.opacity = '0';
-                comboTimer.style.color = 'var(--nes-light-green)';
-            }
-        } catch (_) {
-            // 忽略任何清理异常
-        }
     }
     
     updateUI() {
@@ -1234,7 +860,7 @@ class NESTetris {
         document.getElementById('level').textContent = this.level.toString();
         document.getElementById('lines').textContent = this.linesClearedTotal.toString();
         
-        // 更新连击UI（combo=1不显示任何数字/倒计时；combo>=2显示）
+        // 更新连击UI
         this.updateComboUI();
     }
     
@@ -1347,45 +973,33 @@ class NESTetris {
                     const renderX = (offsetX + x) * nextCellSize;
                     const renderY = (offsetY + y) * nextCellSize;
                     
-                    // 填充方块
+                    // 填充方块 - 恢复可见
                     this.nextCtx.fillStyle = this.nextPiece.color;
                     this.nextCtx.fillRect(renderX, renderY, nextCellSize, nextCellSize);
                     
-                    // 绘制边框
+                    // 绘制边框 - 不透明度100%（清晰可见）
                     this.nextCtx.strokeStyle = '#0f380f';
                     this.nextCtx.lineWidth = 1;
                     this.nextCtx.globalAlpha = 1.0; // 设置不透明度为100%（完全清晰）
                     this.nextCtx.strokeRect(renderX, renderY, nextCellSize, nextCellSize);
                     this.nextCtx.globalAlpha = 1.0; // 重置透明度
                     
-                    // 调试信息
-                    if (this.DEBUG) console.log(`${this.nextPiece.name}方块渲染位置: (${renderX}, ${renderY}), 偏移: (${offsetX}, ${offsetY}), 方块中心: (${pieceCenterX}, ${pieceCenterY})`);
+                    // 调试信息：在控制台输出渲染位置
+                    console.log(`${this.nextPiece.name}方块渲染位置: (${renderX}, ${renderY}), 偏移: (${offsetX}, ${offsetY}), 方块中心: (${pieceCenterX}, ${pieceCenterY})`);
                 }
             }
         }
     }
     
     gameLoop() {
-        try {
-            // 处理输入
-            this.handleInput();
-            
-            if (this.gameState === 'playing') {
-                this.update();
-            }
-            
-            this.render();
-            this.updateUI();
-            
-            // 更新手柄状态显示
-            if (this.inputManager) {
-                this.inputManager.updateStatus();
-            }
-        } catch (e) {
-            if (window.GameLogger) window.GameLogger.error('tick-exception', { message: e && e.message, stack: e && e.stack });
-        } finally {
-            requestAnimationFrame(() => this.gameLoop());
+        if (this.gameState === 'playing') {
+            this.update();
         }
+        
+        this.render();
+        this.updateUI();
+        
+        requestAnimationFrame(() => this.gameLoop());
     }
     
     update() {
@@ -1404,9 +1018,6 @@ class NESTetris {
         
         // 处理重力
         this.updateGravity();
-
-        // 连击窗口倒计时（仅在进行中）
-        this.comboSystem.tick(Date.now());
     }
     
     updateDAS() {
@@ -1902,27 +1513,22 @@ class NESTetris {
     }
     
     // 触发连击特效
-    triggerComboEffects(comboCount, options = {}) {
-        const isClutch = !!options.clutch;
+    triggerComboEffects(comboCount) {
         // 显示连击文本
-        this.showComboText(comboCount, { clutch: isClutch });
+        this.showComboText(comboCount);
         
         // 播放连击音效
-        this.playComboSound(comboCount, { clutch: isClutch });
-        if (isClutch) {
-            this.playClutchDing();
-        }
+        this.playComboSound(comboCount);
         
         // 屏幕震动
-        this.screenShake(comboCount, { clutch: isClutch });
+        this.screenShake(comboCount);
         
         // 粒子特效
         this.createComboParticles(comboCount);
     }
     
     // 显示连击文本
-    showComboText(comboCount, options = {}) {
-        const isClutch = !!options.clutch;
+    showComboText(comboCount) {
         if (comboCount < 2) return;
         
         const comboText = `COMBO x${comboCount}!`;
@@ -1945,14 +1551,9 @@ class NESTetris {
             // 设置位置
             comboDisplay.style.left = centerX + 'px';
             comboDisplay.style.top = centerY + 'px';
-            comboDisplay.style.transform = 'translate(-50%, -50%)' + (isClutch ? ' scale(2.0)' : '');
+            comboDisplay.style.transform = 'translate(-50%, -50%)';
             
-            // 使用内层元素承载动画，外层负责定位
-            comboDisplay.innerHTML = '';
-            const inner = document.createElement('span');
-            inner.className = 'combo-inner';
-            inner.textContent = comboText;
-            comboDisplay.appendChild(inner);
+            comboDisplay.textContent = comboText;
             comboDisplay.classList.add('show');
             
             // 添加调试信息
@@ -1961,7 +1562,6 @@ class NESTetris {
             // 1秒后隐藏
             setTimeout(() => {
                 comboDisplay.classList.remove('show');
-                comboDisplay.innerHTML = '';
                 console.log('连击文本已隐藏');
             }, 1000);
         } else {
@@ -1969,210 +1569,71 @@ class NESTetris {
         }
     }
     
-    // 播放连击音效 - 对齐线上版本的直接播放方式
-    playComboSound(comboCount, options = {}) {
-        const isClutch = !!options.clutch;
+    // 播放连击音效
+    playComboSound(comboCount) {
         if (comboCount < 2) return;
         
         try {
-            // 检查音频上下文是否可用（线上版本方式）
+            // 连击音效配置（2-10连击独立音效，>10沿用10连击音效）
+            const comboSounds = {
+                2: { frequency: 440, duration: 0.2 },   // A4音
+                3: { frequency: 523, duration: 0.2 },   // C5音
+                4: { frequency: 659, duration: 0.3 },   // E5音
+                5: { frequency: 784, duration: 0.4 },   // G5音
+                6: { frequency: 880, duration: 0.4 },   // A5音
+                7: { frequency: 1047, duration: 0.5 },  // C6音
+                8: { frequency: 1319, duration: 0.5 },  // E6音
+                9: { frequency: 1568, duration: 0.6 },  // G6音
+                10: { frequency: 1760, duration: 0.6 }  // A6音
+            };
+            
+            // 获取音效配置，>10连击沿用10连击音效
+            let sound = comboSounds[comboCount];
+            if (!sound) {
+                sound = comboSounds[10];
+                console.log(`使用10连击音效配置: ${comboCount}连击`);
+            }
+            
+            // 检查音频上下文是否可用
             if (!this.audio || !this.audio.audioContext) {
                 console.log('音频上下文不可用');
                 return;
             }
             
-            // 检查音频上下文状态（线上版本方式）
+            // 检查音频上下文状态
             if (this.audio.audioContext.state === 'suspended') {
                 console.log('音频上下文已暂停，尝试恢复...');
                 this.audio.audioContext.resume();
             }
             
-            // 舒适版连击音效 - 超低延迟版本
-            this.generateComboSFX(comboCount, { gainScale: isClutch ? 1.5 : 1.0 });
+            // 使用Web Audio API生成音效
+            const oscillator = this.audio.audioContext.createOscillator();
+            const gainNode = this.audio.audioContext.createGain();
             
-            console.log(`播放舒适连击音效: ${comboCount}连击`);
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audio.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(sound.frequency, this.audio.audioContext.currentTime);
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.3, this.audio.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audio.audioContext.currentTime + sound.duration);
+            
+            oscillator.start(this.audio.audioContext.currentTime);
+            oscillator.stop(this.audio.audioContext.currentTime + sound.duration);
+            
+            console.log(`播放连击音效: ${comboCount}连击, 频率${sound.frequency}Hz, 时长${sound.duration}s`);
         } catch (error) {
             console.log('播放连击音效失败:', error);
         }
     }
-
-    // 压哨“叮”声（铃铛）
-    // 压哨"叮"声（铃铛）- 对齐线上版本的直接播放方式
-    playClutchDing() {
-        try {
-            // 检查音频上下文是否可用（线上版本方式）
-            if (!this.audio || !this.audio.audioContext) return;
-            const ctx = this.audio.audioContext;
-            const now = ctx.currentTime;
-
-            // 冷却控制
-            if (this._clutchDingLast && (now - this._clutchDingLast) < 0.2) return; // 200ms
-            this._clutchDingLast = now;
-
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            const pan = (this.audio.panner || null);
-
-            const baseHz = 2000;
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(baseHz, now);
-
-            const volume = 0.35; // 低音量
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(volume, now + 0.006);
-            gain.gain.exponentialRampToValueAtTime(volume * 0.4, now + 0.1);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-
-            if (pan && pan.pan) {
-                try { pan.pan.setValueAtTime(0, now); } catch (_) {}
-                osc.connect(gain).connect(pan).connect(this.audio.sfxGain);
-            } else {
-                osc.connect(gain).connect(this.audio.sfxGain);
-            }
-
-            osc.start(now);
-            osc.stop(now + 0.2);
-        } catch (_) {}
-    }
-    
-    // 生成钢琴音阶连击音效
-    generateComboSFX(comboCount, options = {}) {
-        const gainScale = options.gainScale || 1.0;
-        if (!this.audio || !this.audio.audioContext) return;
-        
-        try {
-            // 钢琴音阶连击音效配置 - C大调音阶
-            const pianoComboConfig = {
-                2: { notes: [261.63], chord: [329.63], duration: 0.6, volume: 0.25 },     // C4 + E4 (大三度)
-                3: { notes: [293.66], chord: [369.99], duration: 0.7, volume: 0.3 },      // D4 + F#4 (大三度)
-                4: { notes: [329.63], chord: [415.30], duration: 0.8, volume: 0.35 },     // E4 + G#4 (大三度)
-                5: { notes: [349.23], chord: [440.00], duration: 0.9, volume: 0.4 },      // F4 + A4 (大三度)
-                6: { notes: [392.00], chord: [493.88], duration: 1.0, volume: 0.45 },     // G4 + B4 (大三度)
-                7: { notes: [440.00], chord: [554.37], duration: 1.1, volume: 0.5 },      // A4 + C#5 (大三度)
-                8: { notes: [493.88], chord: [622.25], duration: 1.2, volume: 0.55 },     // B4 + D#5 (大三度)
-                9: { notes: [523.25], chord: [659.25], duration: 1.3, volume: 0.6 },      // C5 + E5 (大三度)
-                10: { notes: [587.33], chord: [739.99], duration: 1.4, volume: 0.65 }     // D5 + F#5 (大三度)
-            };
-            
-            // 获取配置，高连击沿用10连击配置
-            const config = pianoComboConfig[Math.min(comboCount, 10)];
-            
-            // 直接播放，超低延迟
-            const startTime = this.audio.audioContext.currentTime;
-            
-            // 创建钢琴音色（使用多重振荡器模拟钢琴复合音色）
-            this.createPianoNote(config.notes[0], config.volume * gainScale, config.duration, startTime, true); // 主音
-            this.createPianoNote(config.chord[0], (config.volume * 0.7) * gainScale, config.duration, startTime + 0.1, false); // 和弦音
-            
-            // 高连击添加琶音效果（>= 6连击）
-            if (comboCount >= 6) {
-                this.addPianoArpeggio(startTime, config, comboCount);
-            }
-            
-            // 超高连击添加钢琴颤音（>= 8连击）
-            if (comboCount >= 8) {
-                this.addPianoTremolo(startTime, config.notes[0], config.duration);
-            }
-            
-        } catch (error) {
-            console.error('钢琴连击音效生成失败:', error);
-        }
-    }
-    
-    // 创建钢琴音符（模拟钢琴复合音色）
-    createPianoNote(frequency, volume, duration, startTime, isMainNote = true) {
-        try {
-            // 钢琴音色由多个谐波组成
-            const harmonics = [
-                { freq: frequency, vol: 1.0 },           // 基频
-                { freq: frequency * 2, vol: 0.3 },       // 2次谐波
-                { freq: frequency * 3, vol: 0.15 },      // 3次谐波
-                { freq: frequency * 4, vol: 0.08 },      // 4次谐波
-                { freq: frequency * 5, vol: 0.04 }       // 5次谐波
-            ];
-            
-            harmonics.forEach((harmonic, index) => {
-                const oscillator = this.audio.audioContext.createOscillator();
-                const gainNode = this.audio.audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(this.audio.sfxGain);
-                
-                // 钢琴音色使用正弦波作为基础
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(harmonic.freq, startTime);
-                
-                // 钢琴特有的音量包络（快速攻击，缓慢衰减）
-                const noteVolume = volume * harmonic.vol * (isMainNote ? 1.0 : 0.7);
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(noteVolume, startTime + 0.01); // 快速攻击
-                gainNode.gain.exponentialRampToValueAtTime(noteVolume * 0.6, startTime + 0.1); // 快速衰减
-                gainNode.gain.exponentialRampToValueAtTime(noteVolume * 0.3, startTime + duration * 0.5); // 持续衰减
-                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration); // 完全衰减
-                
-                oscillator.start(startTime);
-                oscillator.stop(startTime + duration);
-            });
-            
-        } catch (error) {
-            console.error('钢琴音符创建失败:', error);
-        }
-    }
-    
-    // 钢琴琶音效果（高连击专用）
-    addPianoArpeggio(startTime, config, comboCount) {
-        try {
-            // 琶音音符序列（向上琶音）
-            const arpeggioNotes = [
-                config.notes[0],
-                config.chord[0],
-                config.notes[0] * 1.5,  // 五度
-                config.notes[0] * 2     // 八度
-            ];
-            
-            const arpeggioDelay = 0.08; // 琶音间隔
-            
-            arpeggioNotes.forEach((freq, index) => {
-                const noteStartTime = startTime + 0.2 + (index * arpeggioDelay);
-                this.createPianoNote(freq, config.volume * 0.4, 0.5, noteStartTime, false);
-            });
-            
-        } catch (error) {
-            console.error('钢琴琶音效果失败:', error);
-        }
-    }
-    
-    // 钢琴颤音效果（超高连击专用）
-    addPianoTremolo(startTime, baseFreq, duration) {
-        try {
-            // 颤音效果（快速交替两个相近音符）
-            const tremoloFreq1 = baseFreq * 2;
-            const tremoloFreq2 = baseFreq * 2.059; // 半音关系
-            const tremoloSpeed = 0.05; // 颤音速度
-            const tremoloCount = Math.floor(duration / tremoloSpeed / 2);
-            
-            for (let i = 0; i < tremoloCount; i++) {
-                const tremolo1Time = startTime + 0.4 + (i * tremoloSpeed * 2);
-                const tremolo2Time = tremolo1Time + tremoloSpeed;
-                
-                this.createPianoNote(tremoloFreq1, 0.15, tremoloSpeed * 1.5, tremolo1Time, false);
-                this.createPianoNote(tremoloFreq2, 0.15, tremoloSpeed * 1.5, tremolo2Time, false);
-            }
-            
-        } catch (error) {
-            console.error('钢琴颤音效果失败:', error);
-        }
-    }
-    
-
     
     // 屏幕震动
-    screenShake(comboCount, options = {}) {
-        const isClutch = !!options.clutch;
+    screenShake(comboCount) {
         const gameArea = document.querySelector('.game-area');
         if (!gameArea) return;
         
-        const intensity = Math.min(comboCount * 2 * (isClutch ? 1.5 : 1.0), 10); // 最大震动10px
+        const intensity = Math.min(comboCount * 2, 10); // 最大震动10px
         
         gameArea.style.transform = `translate(${intensity}px, ${intensity}px)`;
         
@@ -2229,11 +1690,16 @@ class NESTetris {
         const comboElement = document.getElementById('combo');
         if (comboElement) {
             const comboMultiplier = this.comboSystem.getMultiplier();
-            if (comboMultiplier >= 2) {
-                comboElement.textContent = `x${comboMultiplier}`;
+            comboElement.textContent = `x${comboMultiplier}`;
+            
+            // 添加连击激活效果（连击数≥2时）
+            if (this.comboSystem.comboCount >= 2) {
                 comboElement.classList.add('active');
+                // 10秒后移除激活效果（与连击窗口同步）
+                setTimeout(() => {
+                    comboElement.classList.remove('active');
+                }, 10000);
             } else {
-                comboElement.textContent = `x1`;
                 comboElement.classList.remove('active');
             }
         }
@@ -2245,8 +1711,7 @@ class NESTetris {
     // 更新倒计时显示
     updateComboTimer() {
         const currentTime = Date.now();
-        // 模型值
-        const modelInfo = this.comboSystem.getTimerInfo();
+        const timerInfo = this.comboSystem.getTimerInfo(currentTime);
         
         const timerElement = document.getElementById('comboTimer');
         
@@ -2256,22 +1721,15 @@ class NESTetris {
             const currentOpacity = computedStyle.opacity;
             
             // 只有在连击激活且剩余时间大于0时才显示
-            if (modelInfo.active && modelInfo.remaining > 0 && this.comboSystem.getMultiplier() >= 2) {
-                // 滚动增长动画：逐步将 displayTimerSeconds 推近 模型剩余值
-                const modelSec = modelInfo.remaining;
-                const capModelSec = Math.min(30, modelSec);
-                // 先处理“待增加”的滚动显示
-                if ((this.timerAnim.remainingToAddSec || 0) > 0) {
-                    const step = Math.max(0.01, Math.min(this.timerAnim.remainingToAddSec, 0.01 * this.timerAnim.ratePerSec));
-                    this.displayTimerSeconds = Math.min(30, this.displayTimerSeconds + step);
-                    this.timerAnim.remainingToAddSec = Math.max(0, this.timerAnim.remainingToAddSec - step);
-                } else {
-                    // 无新增时，跟随模型（避免视觉滞后过大）
-                    this.displayTimerSeconds = Math.max(0, Math.min(30, capModelSec));
+            if (timerInfo.active && timerInfo.remaining > 0) {
+                // 显示倒计时 - 从10.00开始显示
+                let displayTime = timerInfo.remaining;
+                
+                // 如果剩余时间大于10.00秒，显示10.00
+                if (displayTime > 10.00) {
+                    displayTime = 10.00;
                 }
-
-                // 显示值对齐到两位小数（0.01 粒度）
-                const displayTime = Math.max(0, Math.min(30, this.displayTimerSeconds));
+                
                 timerElement.textContent = displayTime.toFixed(2);
                 timerElement.classList.add('show');
                 
@@ -2302,9 +1760,10 @@ class NESTetris {
         }
     }
     
-} // 结束NESTetris类
 
-// 初始化游戏
+}
+
+    // 初始化游戏
     document.addEventListener('DOMContentLoaded', () => {
         const tetrisGame = new NESTetris();
         // 自动开始游戏

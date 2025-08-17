@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据问题调试工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4285f4;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .browser-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 数据问题调试工具</h1>
+        
+        <div class="browser-info">
+            <h3>🌐 浏览器信息</h3>
+            <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+            <p><strong>浏览器类型:</strong> <span id="browserType"></span></p>
+            <p><strong>Web Audio API支持:</strong> <span id="audioSupport"></span></p>
+            <p><strong>AudioContext支持:</strong> <span id="audioContextSupport"></span></p>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔊 Safari音频问题调试</h2>
+            <button onclick="testSafariAudio()">测试Safari音频兼容性</button>
+            <button onclick="testAudioContext()">测试AudioContext状态</button>
+            <button onclick="testUserInteraction()">测试用户交互检测</button>
+            <button onclick="testAudioInitialization()">测试音频初始化</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 世界榜单数据问题调试</h2>
+            <button onclick="testGoogleSheetsQuery()">测试Google Sheets查询</button>
+            <button onclick="testScoreSubmission()">测试成绩提交</button>
+            <button onclick="testFormData()">测试表单数据格式</button>
+            <button onclick="checkLocalStorage()">检查本地存储</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 综合诊断</h2>
+            <button onclick="runFullDiagnostic()">运行完整诊断</button>
+            <button onclick="clearAllData()">清除所有数据</button>
+        </div>
+        
+        <div id="result" class="result info" style="display: none;">
+            <h3>调试结果:</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <!-- 加载音频管理器 -->
+    <script src="../src/js/audio_manager.js"></script>
+
+    <script>
+        // 显示浏览器信息
+        function displayBrowserInfo() {
+            const userAgent = navigator.userAgent;
+            document.getElementById('userAgent').textContent = userAgent;
+            
+            let browserType = 'Unknown';
+            if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+                browserType = 'Safari';
+            } else if (userAgent.includes('Chrome')) {
+                browserType = 'Chrome';
+            } else if (userAgent.includes('Firefox')) {
+                browserType = 'Firefox';
+            } else if (userAgent.includes('Edge')) {
+                browserType = 'Edge';
+            }
+            document.getElementById('browserType').textContent = browserType;
+            
+            const audioSupport = typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined';
+            document.getElementById('audioSupport').textContent = audioSupport ? '✅ 支持' : '❌ 不支持';
+            
+            const audioContextSupport = typeof AudioContext !== 'undefined' ? 'AudioContext' : 
+                                      typeof webkitAudioContext !== 'undefined' ? 'webkitAudioContext' : '❌ 不支持';
+            document.getElementById('audioContextSupport').textContent = audioContextSupport;
+        }
+        
+        // 测试Safari音频兼容性
+        async function testSafariAudio() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试Safari音频兼容性...\n';
+            
+            try {
+                const isSafari = navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome');
+                resultContent.innerHTML += `浏览器检测: ${isSafari ? 'Safari' : '非Safari'}\n`;
+                
+                // 测试AudioContext创建
+                const audioContextOptions = { latencyHint: 'interactive' };
+                if (!isSafari) {
+                    audioContextOptions.sampleRate = 48000;
+                }
+                
+                resultContent.innerHTML += `AudioContext选项: ${JSON.stringify(audioContextOptions)}\n`;
+                
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)(audioContextOptions);
+                resultContent.innerHTML += `AudioContext创建成功，状态: ${audioContext.state}\n`;
+                
+                // 测试音频节点创建
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                resultContent.innerHTML += `音频节点创建成功\n`;
+                
+                // 测试连接
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                resultContent.innerHTML += `音频节点连接成功\n`;
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ Safari音频兼容性测试通过\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ Safari音频兼容性测试失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试AudioContext状态
+        async function testAudioContext() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试AudioContext状态...\n';
+            
+            try {
+                if (!window.globalAudioManager) {
+                    throw new Error('全局音频管理器未创建');
+                }
+                
+                const status = window.globalAudioManager.getAudioStatus();
+                resultContent.innerHTML += `音频状态: ${JSON.stringify(status, null, 2)}\n`;
+                
+                const audioReady = await window.globalAudioManager.ensureAudioReady();
+                resultContent.innerHTML += `音频系统就绪: ${audioReady}\n`;
+                
+                resultDiv.className = audioReady ? 'result success' : 'result warning';
+                resultContent.innerHTML += audioReady ? '✅ AudioContext状态正常\n' : '⚠️ AudioContext状态异常\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ AudioContext状态测试失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试用户交互检测
+        function testUserInteraction() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试用户交互检测...\n';
+            
+            try {
+                if (!window.globalAudioManager) {
+                    throw new Error('全局音频管理器未创建');
+                }
+                
+                const status = window.globalAudioManager.getAudioStatus();
+                resultContent.innerHTML += `用户交互状态: ${status.userInteracted}\n`;
+                
+                // 模拟用户交互
+                document.body.click();
+                
+                setTimeout(() => {
+                    const newStatus = window.globalAudioManager.getAudioStatus();
+                    resultContent.innerHTML += `模拟交互后状态: ${newStatus.userInteracted}\n`;
+                    
+                    resultDiv.className = 'result success';
+                    resultContent.innerHTML += '✅ 用户交互检测正常\n';
+                }, 100);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 用户交互检测失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试音频初始化
+        async function testAudioInitialization() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试音频初始化...\n';
+            
+            try {
+                if (!window.globalAudioManager) {
+                    throw new Error('全局音频管理器未创建');
+                }
+                
+                await window.globalAudioManager.initializeAudio();
+                
+                const status = window.globalAudioManager.getAudioStatus();
+                resultContent.innerHTML += `初始化后状态: ${JSON.stringify(status, null, 2)}\n`;
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ 音频初始化成功\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 音频初始化失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试Google Sheets查询
+        async function testGoogleSheetsQuery() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试Google Sheets查询...\n';
+            
+            try {
+                const SPREADSHEET_ID = '17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU';
+                const SHEET_NAME = 'scores_raw';
+                
+                const query = encodeURIComponent(`
+                    SELECT player_name, score, level, lines, duration_ms 
+                    FROM ${SHEET_NAME} 
+                    ORDER BY score DESC 
+                    LIMIT 10
+                `);
+                
+                const googleUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tq=${query}&tqx=out:json`;
+                const proxyUrl = `http://localhost:8002/proxy/sheets?url=${encodeURIComponent(googleUrl)}`;
+                resultContent.innerHTML += `原始URL: ${googleUrl}\n`;
+                resultContent.innerHTML += `代理URL: ${proxyUrl}\n`;
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                const text = await response.text();
+                
+                resultContent.innerHTML += `响应状态: ${response.status}\n`;
+                resultContent.innerHTML += `响应长度: ${text.length}\n`;
+                resultContent.innerHTML += `响应前200字符: ${text.substring(0, 200)}\n`;
+                
+                const jsonText = text.substring(47).slice(0, -2);
+                const data = JSON.parse(jsonText);
+                
+                resultContent.innerHTML += `解析后数据: ${JSON.stringify(data, null, 2)}\n`;
+                
+                if (data.table && data.table.rows) {
+                    resultContent.innerHTML += `找到 ${data.table.rows.length} 条记录\n`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultContent.innerHTML += '未找到数据\n';
+                    resultDiv.className = 'result warning';
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ Google Sheets查询失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试成绩提交
+        async function testScoreSubmission() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试成绩提交...\n';
+            
+            try {
+                // 模拟成绩数据
+                const testScore = {
+                    score: 1000,
+                    level: 1,
+                    lines: 4,
+                    duration: 60000,
+                    playerName: 'TestPlayer'
+                };
+                
+                resultContent.innerHTML += `测试成绩: ${JSON.stringify(testScore, null, 2)}\n`;
+                
+                // 检查ScoreSubmissionManager是否存在
+                if (!window.scoreSubmissionManager) {
+                    throw new Error('ScoreSubmissionManager未创建');
+                }
+                
+                const result = await window.scoreSubmissionManager.submitScore(testScore);
+                resultContent.innerHTML += `提交结果: ${JSON.stringify(result, null, 2)}\n`;
+                
+                resultDiv.className = result.success ? 'result success' : 'result error';
+                resultContent.innerHTML += result.success ? '✅ 成绩提交成功\n' : '❌ 成绩提交失败\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 成绩提交测试失败: ${error.message}\n`;
+            }
+        }
+        
+        // 测试表单数据格式
+        function testFormData() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在测试表单数据格式...\n';
+            
+            try {
+                if (!window.scoreSubmissionManager) {
+                    throw new Error('ScoreSubmissionManager未创建');
+                }
+                
+                const testScore = {
+                    score: 1000,
+                    level: 1,
+                    lines: 4,
+                    duration: 60000,
+                    playerName: 'TestPlayer'
+                };
+                
+                const formData = window.scoreSubmissionManager.prepareSubmissionData(testScore);
+                resultContent.innerHTML += `表单数据: ${JSON.stringify(formData, null, 2)}\n`;
+                
+                // 测试FormData对象
+                const submitData = new FormData();
+                for (const [key, value] of Object.entries(formData)) {
+                    submitData.append(key, value);
+                }
+                
+                resultContent.innerHTML += 'FormData对象创建成功\n';
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ 表单数据格式正确\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 表单数据格式测试失败: ${error.message}\n`;
+            }
+        }
+        
+        // 检查本地存储
+        function checkLocalStorage() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在检查本地存储...\n';
+            
+            try {
+                const playerName = localStorage.getItem('playerName');
+                const playerHighScore = localStorage.getItem('playerHighScore');
+                const highScores = localStorage.getItem('highScores');
+                
+                resultContent.innerHTML += `玩家名称: ${playerName || '未设置'}\n`;
+                resultContent.innerHTML += `最高分: ${playerHighScore || '无'}\n`;
+                resultContent.innerHTML += `本地高分记录: ${highScores ? '存在' : '无'}\n`;
+                
+                if (highScores) {
+                    try {
+                        const scores = JSON.parse(highScores);
+                        resultContent.innerHTML += `本地记录数量: ${scores.length}\n`;
+                        resultContent.innerHTML += `本地记录: ${JSON.stringify(scores, null, 2)}\n`;
+                    } catch (e) {
+                        resultContent.innerHTML += `本地记录解析失败: ${e.message}\n`;
+                    }
+                }
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ 本地存储检查完成\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 本地存储检查失败: ${error.message}\n`;
+            }
+        }
+        
+        // 运行完整诊断
+        async function runFullDiagnostic() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultContent.innerHTML = '正在运行完整诊断...\n';
+            
+            try {
+                // 1. 浏览器信息
+                resultContent.innerHTML += '=== 浏览器信息 ===\n';
+                const userAgent = navigator.userAgent;
+                const isSafari = userAgent.includes('Safari') && !userAgent.includes('Chrome');
+                resultContent.innerHTML += `浏览器: ${isSafari ? 'Safari' : '非Safari'}\n`;
+                resultContent.innerHTML += `Web Audio API: ${typeof AudioContext !== 'undefined' ? '支持' : '不支持'}\n`;
+                
+                // 2. 音频系统
+                resultContent.innerHTML += '\n=== 音频系统 ===\n';
+                if (window.globalAudioManager) {
+                    const audioStatus = window.globalAudioManager.getAudioStatus();
+                    resultContent.innerHTML += `音频管理器: 已创建\n`;
+                    resultContent.innerHTML += `初始化状态: ${audioStatus.isInitialized}\n`;
+                    resultContent.innerHTML += `用户交互: ${audioStatus.userInteracted}\n`;
+                    resultContent.innerHTML += `AudioContext状态: ${audioStatus.audioContextState}\n`;
+                } else {
+                    resultContent.innerHTML += `音频管理器: 未创建\n`;
+                }
+                
+                // 3. 成绩提交系统
+                resultContent.innerHTML += '\n=== 成绩提交系统 ===\n';
+                if (window.scoreSubmissionManager) {
+                    resultContent.innerHTML += `成绩提交管理器: 已创建\n`;
+                } else {
+                    resultContent.innerHTML += `成绩提交管理器: 未创建\n`;
+                }
+                
+                // 4. 排行榜系统
+                resultContent.innerHTML += '\n=== 排行榜系统 ===\n';
+                if (window.tetrisWorldLeaderboard) {
+                    resultContent.innerHTML += `排行榜管理器: 已创建\n`;
+                } else {
+                    resultContent.innerHTML += `排行榜管理器: 未创建\n`;
+                }
+                
+                // 5. 本地存储
+                resultContent.innerHTML += '\n=== 本地存储 ===\n';
+                const playerName = localStorage.getItem('playerName');
+                const playerHighScore = localStorage.getItem('playerHighScore');
+                resultContent.innerHTML += `玩家名称: ${playerName || '未设置'}\n`;
+                resultContent.innerHTML += `最高分: ${playerHighScore || '无'}\n`;
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '\n✅ 完整诊断完成\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 完整诊断失败: ${error.message}\n`;
+            }
+        }
+        
+        // 清除所有数据
+        function clearAllData() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result warning';
+            resultContent.innerHTML = '正在清除所有数据...\n';
+            
+            try {
+                // 清除本地存储
+                localStorage.clear();
+                resultContent.innerHTML += '本地存储已清除\n';
+                
+                // 重置音频管理器
+                if (window.globalAudioManager) {
+                    window.globalAudioManager.reset();
+                    resultContent.innerHTML += '音频管理器已重置\n';
+                }
+                
+                resultDiv.className = 'result success';
+                resultContent.innerHTML += '✅ 所有数据已清除\n';
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultContent.innerHTML += `❌ 数据清除失败: ${error.message}\n`;
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('数据问题调试工具已加载');
+            displayBrowserInfo();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Apps Script API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .info {
+            border-color: #17a2b8;
+            background-color: #d1ecf1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Google Apps Script API 测试工具</h1>
+        
+        <div class="input-group">
+            <label for="apiUrl">API URL:</label>
+            <input type="text" id="apiUrl" value="https://script.google.com/macros/s/AKfycbw3SGMUVmn1sAvJfhOpeAWTu7WSW-lOrRStIOjMdY3XjPGQQ3ldkN-S0zH2bStiClzi/exec" placeholder="输入您的Google Apps Script API URL">
+        </div>
+
+        <div class="input-group">
+            <label for="testData">测试数据 (JSON格式):</label>
+            <textarea id="testData" placeholder="输入测试数据...">{
+  "player_name": "TestPlayer",
+  "score": 15000,
+  "level": 5,
+  "lines": 20,
+  "duration_ms": 120000
+}</textarea>
+        </div>
+
+        <div>
+            <button onclick="testGetScores()">📊 测试获取排行榜</button>
+            <button onclick="testSubmitScore()">📝 测试提交成绩</button>
+            <button onclick="testGetPlayerRank()">🏆 测试获取排名</button>
+            <button onclick="testAll()">🔄 测试所有功能</button>
+        </div>
+
+        <div id="result" class="result info">
+            点击上方按钮开始测试...
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+        }
+
+        function testGetScores() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            showResult('正在测试获取排行榜数据...', 'info');
+            
+            fetch(`${apiUrl}?action=get_scores`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('Raw response:', data);
+                    try {
+                        const jsonData = JSON.parse(data);
+                        showResult(`✅ 获取排行榜成功!\n\n响应数据:\n${JSON.stringify(jsonData, null, 2)}`, 'success');
+                    } catch (e) {
+                        showResult(`⚠️ 响应不是有效JSON:\n${data}\n\n错误: ${e.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    showResult(`❌ 获取排行榜失败:\n${error.message}`, 'error');
+                });
+        }
+
+        function testSubmitScore() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const testDataText = document.getElementById('testData').value;
+            
+            try {
+                const testData = JSON.parse(testDataText);
+                showResult('正在测试提交成绩...', 'info');
+                
+                const params = new URLSearchParams({
+                    action: 'submit_score',
+                    player_name: testData.player_name,
+                    score: testData.score,
+                    level: testData.level,
+                    lines: testData.lines,
+                    duration_ms: testData.duration_ms
+                });
+                
+                fetch(`${apiUrl}?${params.toString()}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        console.log('Submit response:', data);
+                        try {
+                            const jsonData = JSON.parse(data);
+                            showResult(`✅ 提交成绩成功!\n\n响应数据:\n${JSON.stringify(jsonData, null, 2)}`, 'success');
+                        } catch (e) {
+                            showResult(`⚠️ 响应不是有效JSON:\n${data}\n\n错误: ${e.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Submit error:', error);
+                        showResult(`❌ 提交成绩失败:\n${error.message}`, 'error');
+                    });
+            } catch (e) {
+                showResult(`❌ 测试数据格式错误:\n${e.message}`, 'error');
+            }
+        }
+
+        function testGetPlayerRank() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const testDataText = document.getElementById('testData').value;
+            
+            try {
+                const testData = JSON.parse(testDataText);
+                showResult('正在测试获取玩家排名...', 'info');
+                
+                const params = new URLSearchParams({
+                    action: 'get_player_rank',
+                    score: testData.score
+                });
+                
+                fetch(`${apiUrl}?${params.toString()}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        console.log('Rank response:', data);
+                        try {
+                            const jsonData = JSON.parse(data);
+                            showResult(`✅ 获取排名成功!\n\n响应数据:\n${JSON.stringify(jsonData, null, 2)}`, 'success');
+                        } catch (e) {
+                            showResult(`⚠️ 响应不是有效JSON:\n${data}\n\n错误: ${e.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Rank error:', error);
+                        showResult(`❌ 获取排名失败:\n${error.message}`, 'error');
+                    });
+            } catch (e) {
+                showResult(`❌ 测试数据格式错误:\n${e.message}`, 'error');
+            }
+        }
+
+        async function testAll() {
+            showResult('🔄 开始全面测试...\n\n1. 测试获取排行榜...', 'info');
+            
+            try {
+                // 测试1: 获取排行榜
+                const apiUrl = document.getElementById('apiUrl').value;
+                let response = await fetch(`${apiUrl}?action=get_scores`);
+                let data = await response.text();
+                console.log('Get scores response:', data);
+                
+                showResult('✅ 获取排行榜完成\n\n2. 测试提交成绩...', 'info');
+                
+                // 测试2: 提交成绩
+                const testDataText = document.getElementById('testData').value;
+                const testData = JSON.parse(testDataText);
+                const params = new URLSearchParams({
+                    action: 'submit_score',
+                    player_name: testData.player_name,
+                    score: testData.score,
+                    level: testData.level,
+                    lines: testData.lines,
+                    duration_ms: testData.duration_ms
+                });
+                
+                response = await fetch(`${apiUrl}?${params.toString()}`);
+                data = await response.text();
+                console.log('Submit score response:', data);
+                
+                showResult('✅ 提交成绩完成\n\n3. 测试获取排名...', 'info');
+                
+                // 测试3: 获取排名
+                const rankParams = new URLSearchParams({
+                    action: 'get_player_rank',
+                    score: testData.score
+                });
+                
+                response = await fetch(`${apiUrl}?${rankParams.toString()}`);
+                data = await response.text();
+                console.log('Get rank response:', data);
+                
+                showResult('🎉 所有测试完成!\n\n✅ 获取排行榜: 成功\n✅ 提交成绩: 成功\n✅ 获取排名: 成功\n\n所有API功能正常工作!', 'success');
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                showResult(`❌ 测试过程中出现错误:\n${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时显示说明
+        window.onload = function() {
+            showResult(`🔧 Google Apps Script API 测试工具已就绪
+
+📋 使用说明:
+1. 确认API URL正确
+2. 修改测试数据（如需要）
+3. 点击相应按钮进行测试
+
+⚠️ 如果遇到错误，请检查:
+- API URL是否正确
+- Google Apps Script是否已部署
+- 代码是否已更新为最新版本
+
+🚀 建议先测试"获取排行榜"功能`, 'info');
+        };
+    </script>
+</body>
+</html>

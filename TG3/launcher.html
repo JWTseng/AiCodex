@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TG3 Tetris - 开发者工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f380f;
+            color: #8bac0f;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #306230;
+            border: 2px solid #8bac0f;
+            border-radius: 10px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        
+        .header p {
+            color: #9bbc0f;
+            font-size: 1.1em;
+        }
+        
+        .version {
+            display: inline-block;
+            background: #0f380f;
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: 1px solid #8bac0f;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            background: #306230;
+            border: 2px solid #8bac0f;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .section h2 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #ffffff;
+            border-bottom: 1px solid #8bac0f;
+            padding-bottom: 8px;
+        }
+        
+        .game-launch {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        
+        .launch-btn {
+            display: inline-block;
+            background: #8bac0f;
+            color: #0f380f;
+            text-decoration: none;
+            padding: 15px 30px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border-radius: 8px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .launch-btn:hover {
+            background: #9bbc0f;
+            transform: translateY(-2px);
+        }
+        
+        .launch-btn.secondary {
+            background: #4a7a4a;
+            color: #8bac0f;
+            font-size: 1.1em;
+            padding: 12px 25px;
+        }
+        
+        .launch-btn.secondary:hover {
+            background: #5a8a5a;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .test-item {
+            background: #0f380f;
+            border: 1px solid #8bac0f;
+            border-radius: 6px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-item:hover {
+            background: #1a4a1a;
+            transform: translateY(-1px);
+        }
+        
+        .test-item h3 {
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-size: 1em;
+        }
+        
+        .test-item p {
+            font-size: 0.85em;
+            color: #9bbc0f;
+            margin-bottom: 8px;
+        }
+        
+        .test-link {
+            display: inline-block;
+            background: #8bac0f;
+            color: #0f380f;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .test-link:hover {
+            background: #9bbc0f;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            background: #306230;
+            border: 1px solid #8bac0f;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #9bbc0f;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 TG3 Tetris</h1>
+            <p>开发者工具 & 测试套件</p>
+            <div class="version">
+                <strong>v3.0.0</strong> | 音频对齐 | 统一缩放 | 连击系统
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="section game-launch">
+                <h2>🚀 游戏入口</h2>
+                <a href="index.html" class="launch-btn">🎯 启动游戏</a>
+                <br>
+                <a href="start.html" class="launch-btn secondary">⚙️ 游戏设置</a>
+            </div>
+            
+            <div class="section">
+                <h2>🧪 测试工具</h2>
+                <div class="test-grid">
+                    <div class="test-item">
+                        <h3>🎵 音频测试</h3>
+                        <p>音频对齐验证</p>
+                        <a href="tests/combo_audio_test.html" class="test-link">连击音效</a>
+                        <a href="tests/audio_comparison_test.html" class="test-link">音频对比</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h3>📐 缩放测试</h3>
+                        <p>统一缩放验证</p>
+                        <a href="tests/test_unified_scaling.html" class="test-link">缩放功能</a>
+                        <a href="tests/debug_scaling.html" class="test-link">缩放调试</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h3>🎮 手柄测试</h3>
+                        <p>游戏手柄功能</p>
+                        <a href="tests/gamepad_test.html" class="test-link">手柄功能</a>
+                        <a href="tests/simple_gamepad_test.html" class="test-link">简单测试</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h3>🔧 调试工具</h3>
+                        <p>系统调试工具</p>
+                        <a href="tests/audio_test.html" class="test-link">音频调试</a>
+                        <a href="tests/debug_data_issues.html" class="test-link">数据调试</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h3>📊 数据管理</h3>
+                        <p>分数和数据</p>
+                        <a href="clear-scores.html" class="test-link">清除分数</a>
+                        <a href="tests/clear_local_data.html" class="test-link">清除数据</a>
+                    </div>
+                    
+                    <div class="test-item">
+                        <h3>🌐 网络功能</h3>
+                        <p>在线功能测试</p>
+                        <a href="tests/test_score_submission.html" class="test-link">分数提交</a>
+                        <a href="tests/cors_bypass.html" class="test-link">CORS绕过</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>TG3 Tetris v3.0.0</strong> - 开发者工具页面</p>
+            <p>🎵 音频对齐修复 | 📐 统一缩放优化 | 🎮 游戏手柄支持 | 🔧 完整测试套件</p>
+        </div>
+    </div>
+</body>
+</html>
+

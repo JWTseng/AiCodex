@@ -1,132 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLASSIC NES TETRIS</title>
-    <link rel="stylesheet" href="styles_responsive.css">
-    <style>
-        .footer-controls { display: flex; gap: 16px; justify-content: center; margin-top: 12px; }
-        .footer-controls .game-btn { min-width: 140px; }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>TG3 Tetris</title>
+	<link rel="canonical" href="TG3/index.html">
+	<meta http-equiv="refresh" content="0; url=TG3/index.html">
+	<style>
+		body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif; background:#0f380f; color:#fff; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+		.container { text-align:center; }
+		.a { color:#8bac0f; }
+	</style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="game-header">
-            <div class="score-section">
-                <div class="score-label">SCORE</div>
-                <div class="score-value" id="score">000000</div>
-            </div>
-            <div class="combo-section">
-                <div class="combo-label">COMBO</div>
-                <div class="combo-value" id="combo">x1</div>
-            </div>
-            <div class="level-section">
-                <div class="level-label">LEVEL</div>
-                <div class="level-value" id="level">0</div>
-            </div>
-            <div class="lines-section">
-                <div class="lines-label">LINES</div>
-                <div class="lines-value" id="lines">0</div>
-            </div>
-        </div>
-        
-        <div class="game-main">
-            <div class="game-area">
-                <canvas id="gameCanvas" width="400" height="800"></canvas>
-                <div class="game-overlay" id="gameOverlay" style="display: none;">
-                    <div class="game-over-text">GAME OVER</div>
-                </div>
-                <div id="comboDisplay" class="combo-display"></div>
-                <div id="comboTimer" class="combo-timer"></div>
-            </div>
-            
-            <div class="game-sidebar">
-                <div class="next-piece-section">
-                    <div class="next-label">NEXT</div>
-                    <canvas id="nextCanvas" width="80" height="80"></canvas>
-                </div>
-                
-                <div class="controls-section">
-                    <div class="controls-title">KEYBOARD CONTROLS</div>
-                    <div class="control-item">
-                        <span class="control-key">Enter</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">START GAME</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">← →</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">MOVE</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">↓</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">SOFT DROP</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">Q/W</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">ROTATE</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">Space</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">START/PAUSE</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">R</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">RESET</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">M</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">MUSIC TOGGLE</span>
-                    </div>
-                    <div class="control-item">
-                        <span class="control-key">D</span>
-                        <span class="control-separator">:</span>
-                        <span class="control-action">HARD DROP</span>
-                    </div>
-                </div>
-                
-                
-                
-                <div class="high-scores-section">
-                    <div class="high-scores-title" id="highScoresTitle">HIGH SCORES</div>
-                    <table class="high-scores-table">
-                        <thead>
-                            <tr>
-                                <th>RANK</th>
-                                <th>SCORE</th>
-                                <th>LEVEL</th>
-                                <th>LINES</th>
-                                <th>TIME</th>
-                            </tr>
-                        </thead>
-                        <tbody id="highScoresBody">
-                            <!-- 动态生成记录 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="game-footer footer-controls">
-            <button id="startPauseBtn" class="game-btn">START</button>
-            <button id="newBtn" class="game-btn">NEW</button>
-        </div>
-        
-        
-    </div>
-    
-    <script src="audio.js"></script>
-    <script src="logging/logger.js"></script>
-    <script src="input/haptics.js"></script>
-    <script src="responsive/scale.js"></script>
-    <script src="input/keyboard_controller.js"></script>
-    <script src="input/gamepad_controller.js"></script>
-    <script src="input/input_manager.js"></script>
-    <script src="tetris.js"></script>
+	<div class="container">
+		<p>正在跳转到游戏入口… 如果没有自动跳转，请点击：</p>
+		<p><a class="a" href="TG3/index.html">进入 TG3 Tetris</a></p>
+	</div>
 </body>
 </html>
+
+
