@@ -14,6 +14,10 @@ class UnifiedScaling {
     init() {
         // 禁用原有的游戏容器缩放系统
         this.disableOriginalScaling();
+        // iPad自动缩放到80%
+        if (this.isIPadDevice()) {
+            try { this.setScale(0.8); } catch (_) {}
+        }
         this.bindEvents();
         this.updateScale();
     }
@@ -134,7 +138,11 @@ class UnifiedScaling {
         const scale = Math.min(scaleX, scaleY);
         
         // 限制缩放范围
-        const finalScale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+        let finalScale = Math.max(this.minScale, Math.min(this.maxScale, scale));
+        // iPad固定80%优先
+        if (this.isIPadDevice()) {
+            finalScale = Math.min(finalScale, 0.8);
+        }
         
         // 应用缩放到 UI 根容器
         document.documentElement.style.setProperty('--game-scale', finalScale);
@@ -168,6 +176,16 @@ class UnifiedScaling {
     setScale(scale) {
         const finalScale = Math.max(this.minScale, Math.min(this.maxScale, scale));
         document.documentElement.style.setProperty('--game-scale', finalScale);
+    }
+
+    // 设备检测：iPad（包含桌面Safari的iPadOS UA特例）
+    isIPadDevice() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua);
+        const isIPad = /iPad/.test(ua);
+        // iPadOS 13+ 桌面Safari会把平台标为Mac，但支持触摸
+        const isIPadOS13Plus = !isIPad && navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 1;
+        return isIPad || isIPadOS13Plus || (isIOS && /iPad/.test(ua));
     }
     
     // 重置缩放

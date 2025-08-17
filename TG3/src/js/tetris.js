@@ -447,22 +447,23 @@ class NESTetris {
     
     bindEvents() {
         // 按钮事件
-        const startPauseBtn = document.getElementById('startPauseBtn');
-        if (startPauseBtn) {
-            startPauseBtn.addEventListener('click', () => {
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
                 // 开始前显式预加载音频，杜绝首帧延迟
                 if (this.audio && this.audio.preloadForGameStart) {
                     this.audio.preloadForGameStart();
                 }
                 if (this.gameState === 'stopped' || this.gameState === 'gameOver') {
                     this.startGame();
-                    startPauseBtn.textContent = 'PAUSE';
-                } else if (this.gameState === 'playing') {
+                }
+            });
+        }
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => {
+                if (this.gameState === 'playing' || this.gameState === 'paused') {
                     this.togglePause();
-                    startPauseBtn.textContent = 'RESUME';
-                } else if (this.gameState === 'paused') {
-                    this.togglePause();
-                    startPauseBtn.textContent = 'PAUSE';
                 }
             });
         }
@@ -471,9 +472,6 @@ class NESTetris {
         if (newBtn) {
             newBtn.addEventListener('click', () => {
                 this.resetGame();
-                // 重置后按钮回到 START
-                const sp = document.getElementById('startPauseBtn');
-                if (sp) sp.textContent = 'START';
             });
         }
         
@@ -716,8 +714,11 @@ class NESTetris {
         }
         
         this.updateUI();
-        const sp = document.getElementById('startPauseBtn');
-        if (sp) sp.textContent = 'PAUSE';
+        // 开始后：禁用START，启用PAUSE
+        const startBtnEl = document.getElementById('startBtn');
+        const pauseBtnEl = document.getElementById('pauseBtn');
+        if (startBtnEl) startBtnEl.disabled = true;
+        if (pauseBtnEl) pauseBtnEl.disabled = false;
         this.hideGameOverlay();
     }
     
@@ -754,8 +755,11 @@ class NESTetris {
         this.audio.stopMusic();
         
         this.updateUI();
-        const sp = document.getElementById('startPauseBtn');
-        if (sp) sp.textContent = 'START';
+        // 重置后：启用START，禁用PAUSE
+        const startBtnEl2 = document.getElementById('startBtn');
+        const pauseBtnEl2 = document.getElementById('pauseBtn');
+        if (startBtnEl2) startBtnEl2.disabled = false;
+        if (pauseBtnEl2) pauseBtnEl2.disabled = true;
         this.clearTransientUI();
         this.hideGameOverlay();
         // 保持 NEW 按钮在已开始过后可用
@@ -1034,8 +1038,10 @@ class NESTetris {
         }
         
         document.getElementById('gameOverlay').style.display = 'flex';
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('pauseBtn').disabled = true;
+        const startBtnEl3 = document.getElementById('startBtn');
+        const pauseBtnEl3 = document.getElementById('pauseBtn');
+        if (startBtnEl3) startBtnEl3.disabled = false;
+        if (pauseBtnEl3) pauseBtnEl3.disabled = true;
     }
     
     // 提交成绩到全球排行榜

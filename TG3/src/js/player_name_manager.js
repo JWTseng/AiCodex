@@ -6,6 +6,7 @@
 class PlayerNameManager {
     constructor() {
         this.playerName = '';
+        this.playerId = '';
         this.isModalOpen = false;
         
         this.init();
@@ -13,6 +14,7 @@ class PlayerNameManager {
     
     init() {
         this.loadPlayerName();
+        this.ensurePlayerId();
         this.bindEvents();
         
         // 更新玩家名字显示
@@ -59,21 +61,12 @@ class PlayerNameManager {
         });
     }
     
-    // 加载玩家名称
+    // 加载玩家名称（带localStorage + Cookie兜底）
     loadPlayerName() {
-        this.playerName = localStorage.getItem('playerName') || '';
+        this.playerName = this.getStoredValue('playerName') || '';
     }
     
-    // 保存玩家名称
-    savePlayerName(name) {
-        this.playerName = name;
-        localStorage.setItem('playerName', name);
-        
-        // 通知排行榜管理器更新玩家名称
-        if (window.tetrisWorldLeaderboard) {
-            window.tetrisWorldLeaderboard.setPlayerName(name);
-        }
-    }
+    // （注意：实际保存逻辑见后文 savePlayerName，避免重复定义）
     
     // 显示名称设置弹窗
     showNameModal() {
@@ -218,7 +211,7 @@ class PlayerNameManager {
     
     // 保存玩家名字
     savePlayerName(name) {
-        localStorage.setItem('playerName', name);
+        this.setStoredValue('playerName', name);
         this.playerName = name;
         
         // 更新玩家名字显示
@@ -290,6 +283,80 @@ class PlayerNameManager {
     // 检查是否已设置名称
     hasPlayerName() {
         return this.playerName && this.playerName !== '';
+    }
+
+    // ===== 持久化封装与ID管理 =====
+    // 本地存储读取（安全）
+    getFromLocalStorage(key) {
+        try {
+            return window.localStorage ? window.localStorage.getItem(key) : null;
+        } catch (_) {
+            return null;
+        }
+    }
+    // 本地存储写入（安全）
+    setToLocalStorage(key, value) {
+        try {
+            if (window.localStorage) window.localStorage.setItem(key, value);
+        } catch (_) {}
+    }
+    // 读取Cookie
+    getCookie(key) {
+        try {
+            const cookies = document.cookie ? document.cookie.split('; ') : [];
+            for (let i = 0; i < cookies.length; i++) {
+                const parts = cookies[i].split('=');
+                const name = decodeURIComponent(parts[0]);
+                if (name === key) {
+                    return decodeURIComponent(parts.slice(1).join('='));
+                }
+            }
+        } catch (_) {}
+        return null;
+    }
+    // 写入Cookie（默认1年）
+    setCookie(key, value, maxAgeSeconds = 31536000) {
+        try {
+            const safeKey = encodeURIComponent(key);
+            const safeVal = encodeURIComponent(value);
+            document.cookie = `${safeKey}=${safeVal}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Lax`;
+        } catch (_) {}
+    }
+    // 统一读取（localStorage优先，Cookie兜底）
+    getStoredValue(key) {
+        const ls = this.getFromLocalStorage(key);
+        if (ls != null && ls !== '') return ls;
+        const ck = this.getCookie(key);
+        return ck != null ? ck : null;
+    }
+    // 统一写入（双写）
+    setStoredValue(key, value) {
+        this.setToLocalStorage(key, value);
+        this.setCookie(key, value);
+    }
+    
+    // 生成UUID
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    // 确保存在持久的player_id
+    ensurePlayerId() {
+        const existing = this.getStoredValue('playerId');
+        if (existing && existing !== '') {
+            this.playerId = existing;
+            return;
+        }
+        const newId = this.generateUUID();
+        this.playerId = newId;
+        this.setStoredValue('playerId', newId);
+    }
+    // 获取player_id
+    getPlayerId() {
+        return this.playerId || this.getStoredValue('playerId');
     }
 }
 

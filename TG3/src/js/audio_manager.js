@@ -38,7 +38,7 @@ class GlobalAudioManager {
         this.lastPlayTime = 0;
         this.minPlayInterval = 0.005;
         this.lastSFXType = '';
-        this.moveSFXInterval = 0.02;
+        this.moveSFXInterval = 0.03;
         this.lastMoveTime = 0;
         
         // 初始化状态
@@ -224,12 +224,21 @@ class GlobalAudioManager {
     // 播放音效 - 低延迟即时播放（不在此处等待就绪）
     playSFX(type) {
         if (!this.sfxEnabled) return;
-
+        
         try {
-            // 若音频未初始化，尽量不阻塞地触发初始化；但本次仍直接尝试播放
+            // 若音频未初始化，尽量不阻塞地触发初始化；本次仍直接尝试播放
             if (!this.isInitialized) {
-                // 触发一次异步初始化，但不等待
-                this.initializeAudio().catch(() => {});
+                this.initializeAudio()
+                    .then(() => {
+                        // 初始化成功后做一次轻量重试（仅当之前没有上下文时）
+                        try {
+                            if (this.audioContext && this.sfxGain) {
+                                // 轻量重试：不重复计数节流，仅直接调度一次
+                                this.generateChiptuneSFX(type);
+                            }
+                        } catch (_) {}
+                    })
+                    .catch(() => {});
             }
 
             // 确保有上下文与输出增益

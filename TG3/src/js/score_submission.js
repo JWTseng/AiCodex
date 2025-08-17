@@ -76,7 +76,9 @@ class ScoreSubmissionManager {
     // 准备提交数据（Apps Script 接口字段）
     prepareSubmissionData(scoreData) {
         const playerName = window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous';
+        const playerId = window.playerNameManager && window.playerNameManager.getPlayerId ? window.playerNameManager.getPlayerId() : this.generateUUID();
         return {
+            player_id: playerId,
             player_name: playerName,
             score: scoreData.score,
             level: scoreData.level,
