@@ -411,13 +411,13 @@ class GlobalAudioManager {
                 const mainLP = ctx.createBiquadFilter();
                 lowShelf.type = 'lowshelf';
                 lowShelf.frequency.setValueAtTime(120, now);
-                lowShelf.gain.setValueAtTime(15, now);
+                lowShelf.gain.setValueAtTime(7.5, now);
                 mainLP.type = 'lowpass';
                 mainLP.frequency.setValueAtTime(700, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
                 mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.42);
-                const mainVol = Math.min(0.95, this.sfxVolume * 1.1);
+                const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.5;
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
                 mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
@@ -434,7 +434,7 @@ class GlobalAudioManager {
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
                 subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.34);
-                const subVol = Math.min(0.60, this.sfxVolume * 0.85);
+                const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.5;
                 subGain.gain.setValueAtTime(0, now);
                 subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
                 subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
@@ -455,8 +455,8 @@ class GlobalAudioManager {
                     o.start(t);
                     o.stop(t + 0.08);
                 };
-                click(now, 650, Math.min(0.48, this.sfxVolume * 0.7));
-                click(now + 0.03, 420, Math.min(0.32, this.sfxVolume * 0.5));
+                click(now, 650, Math.min(0.48, this.sfxVolume * 0.7) * 0.5);
+                click(now + 0.03, 420, Math.min(0.32, this.sfxVolume * 0.5) * 0.5);
 
                 // 气压冲击：低频带通噪声
                 const noiseDur = 0.12;
@@ -470,7 +470,7 @@ class GlobalAudioManager {
                 bp.frequency.setValueAtTime(160, now);
                 bp.Q.setValueAtTime(0.8, now);
                 const ng = ctx.createGain();
-                const nvol = Math.min(0.35, this.sfxVolume * 0.5);
+                const nvol = Math.min(0.35, this.sfxVolume * 0.5) * 0.5;
                 ng.gain.setValueAtTime(0, now);
                 ng.gain.linearRampToValueAtTime(nvol, now + 0.003);
                 ng.gain.exponentialRampToValueAtTime(0.001, now + 0.11);

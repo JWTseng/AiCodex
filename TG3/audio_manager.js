@@ -391,14 +391,14 @@ class GlobalAudioManager {
                 const mainLP = ctx.createBiquadFilter();
                 lowShelf.type = 'lowshelf';
                 lowShelf.frequency.setValueAtTime(120, now);
-                lowShelf.gain.setValueAtTime(15, now); // 更强低频
+                lowShelf.gain.setValueAtTime(7.5, now); // 更强低频（减半）
                 mainLP.type = 'lowpass';
                 mainLP.frequency.setValueAtTime(700, now);
                 mainLP.Q && mainLP.Q.setValueAtTime(0.7, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
                 mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.42);
-                const mainVol = Math.min(0.95, this.sfxVolume * 1.1);
+                const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.5;
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
                 mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
@@ -415,7 +415,7 @@ class GlobalAudioManager {
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
                 subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.34);
-                const subVol = Math.min(0.60, this.sfxVolume * 0.85);
+                const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.5;
                 subGain.gain.setValueAtTime(0, now);
                 subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
                 subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
@@ -429,7 +429,7 @@ class GlobalAudioManager {
                 clickOsc.type = 'triangle';
                 clickOsc.frequency.setValueAtTime(650, now);
                 clickGain.gain.setValueAtTime(0, now);
-                clickGain.gain.linearRampToValueAtTime(Math.min(0.48, this.sfxVolume * 0.7), now + 0.002);
+                clickGain.gain.linearRampToValueAtTime(Math.min(0.48, this.sfxVolume * 0.7) * 0.5, now + 0.002);
                 clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
                 clickOsc.connect(clickGain).connect(slamBus);
                 clickOsc.start(now);
@@ -442,7 +442,7 @@ class GlobalAudioManager {
                 click2Osc.type = 'triangle';
                 click2Osc.frequency.setValueAtTime(420, t2);
                 click2Gain.gain.setValueAtTime(0, t2);
-                click2Gain.gain.linearRampToValueAtTime(Math.min(0.32, this.sfxVolume * 0.5), t2 + 0.002);
+                click2Gain.gain.linearRampToValueAtTime(Math.min(0.32, this.sfxVolume * 0.5) * 0.5, t2 + 0.002);
                 click2Gain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.07);
                 click2Osc.connect(click2Gain).connect(slamBus);
                 click2Osc.start(t2);
@@ -462,7 +462,7 @@ class GlobalAudioManager {
                 noiseBP.frequency.setValueAtTime(160, now);
                 noiseBP.Q.setValueAtTime(0.8, now);
                 const noiseGain = ctx.createGain();
-                const noiseVol = Math.min(0.35, this.sfxVolume * 0.5);
+                const noiseVol = Math.min(0.35, this.sfxVolume * 0.5) * 0.5;
                 noiseGain.gain.setValueAtTime(0, now);
                 noiseGain.gain.linearRampToValueAtTime(noiseVol, now + 0.003);
                 noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
