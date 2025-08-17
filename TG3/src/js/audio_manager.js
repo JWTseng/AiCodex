@@ -397,10 +397,10 @@ class GlobalAudioManager {
                 const slamBus = ctx.createGain();
                 slamBus.gain.setValueAtTime(1.0, now);
                 const comp = ctx.createDynamicsCompressor();
-                comp.threshold.setValueAtTime(-18, now);
+                comp.threshold.setValueAtTime(-12, now);
                 comp.knee.setValueAtTime(24, now);
-                comp.ratio.setValueAtTime(4, now);
-                comp.attack.setValueAtTime(0.003, now);
+                comp.ratio.setValueAtTime(3, now);
+                comp.attack.setValueAtTime(0.005, now);
                 comp.release.setValueAtTime(0.25, now);
                 slamBus.connect(comp).connect(this.sfxGain);
 
@@ -410,10 +410,10 @@ class GlobalAudioManager {
                 const lowShelf = ctx.createBiquadFilter();
                 const mainLP = ctx.createBiquadFilter();
                 lowShelf.type = 'lowshelf';
-                lowShelf.frequency.setValueAtTime(120, now);
+                lowShelf.frequency.setValueAtTime(90, now);
                 lowShelf.gain.setValueAtTime(4.5, now);
                 mainLP.type = 'lowpass';
-                mainLP.frequency.setValueAtTime(700, now);
+                mainLP.frequency.setValueAtTime(1200, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
                 mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.21);
@@ -430,7 +430,7 @@ class GlobalAudioManager {
                 const subGain = ctx.createGain();
                 const subLP = ctx.createBiquadFilter();
                 subLP.type = 'lowpass';
-                subLP.frequency.setValueAtTime(600, now);
+                subLP.frequency.setValueAtTime(800, now);
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
                 subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
@@ -455,8 +455,8 @@ class GlobalAudioManager {
                     o.start(t);
                     o.stop(t + 0.04);
                 };
-                click(now, 650, Math.min(0.48, this.sfxVolume * 0.7) * 0.5);
-                click(now + 0.015, 420, Math.min(0.32, this.sfxVolume * 0.5) * 0.5);
+                click(now, 650, Math.min(0.48, this.sfxVolume * 0.7) * 0.6);
+                click(now + 0.015, 420, Math.min(0.32, this.sfxVolume * 0.5) * 0.55);
 
                 // 高频“snap”噪声：2kHz 短促空气感，提升落地硬度
                 {
@@ -471,7 +471,7 @@ class GlobalAudioManager {
                     bp2.frequency.setValueAtTime(2000, now);
                     bp2.Q.setValueAtTime(1.2, now);
                     const sg = ctx.createGain();
-                    const sVol = Math.min(0.22, this.sfxVolume * 0.35);
+                    const sVol = Math.min(0.22, this.sfxVolume * 0.35) * 0.8;
                     sg.gain.setValueAtTime(0, now);
                     sg.gain.linearRampToValueAtTime(sVol, now + 0.0015);
                     sg.gain.exponentialRampToValueAtTime(0.001, now + snapDur);
@@ -486,7 +486,7 @@ class GlobalAudioManager {
                     const pg = ctx.createGain();
                     ping.type = 'square';
                     ping.frequency.setValueAtTime(2200, now);
-                    const pVol = Math.min(0.20, this.sfxVolume * 0.3);
+                    const pVol = Math.min(0.20, this.sfxVolume * 0.3) * 0.75;
                     pg.gain.setValueAtTime(0, now);
                     pg.gain.linearRampToValueAtTime(pVol, now + 0.001);
                     pg.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
