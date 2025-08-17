@@ -126,6 +126,14 @@ body {
     color: var(--nes-light-green);
 }
 
+/* 多语言标语样式 */
+.leaderboard-motto {
+    color: #9bbc0f;
+    font-size: 14px;
+    margin-top: 6px;
+    opacity: 0.9;
+}
+
 /* 排行榜内容区域 */
 .leaderboard-content {
     flex: 1;

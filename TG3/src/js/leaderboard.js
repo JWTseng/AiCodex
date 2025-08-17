@@ -20,6 +20,8 @@ class TetrisWorldLeaderboard {
         this.lastSignature = '';
         this.loadWorldScores({ silent: false });
         this.startAutoRefresh();
+        // 初始化多语言标语
+        try { this.initLocalizedMotto(); } catch (_) {}
     }
     
     bindEvents() {
@@ -37,6 +39,73 @@ class TetrisWorldLeaderboard {
                 this.loadWorldScores();
             }
         });
+    }
+
+    // ===== 多语言标语 =====
+    initLocalizedMotto() {
+        const header = document.querySelector('.leaderboard-header');
+        if (!header) return;
+
+        // 若已存在则不重复创建
+        let mottoEl = document.getElementById('leaderboardMotto');
+        if (!mottoEl) {
+            mottoEl = document.createElement('div');
+            mottoEl.id = 'leaderboardMotto';
+            mottoEl.className = 'leaderboard-motto';
+            header.appendChild(mottoEl);
+        }
+
+        const { text, rtl } = this.pickMottoText();
+        mottoEl.textContent = text;
+        if (rtl) {
+            mottoEl.setAttribute('dir', 'rtl');
+            mottoEl.style.textAlign = 'right';
+        } else {
+            mottoEl.removeAttribute('dir');
+            mottoEl.style.textAlign = '';
+        }
+    }
+
+    pickMottoText() {
+        const MAP = {
+            'zh': '真男人就上10级',
+            'en': 'REAL MEN REACH LEVEL 10',
+            'en_alt': 'ONLY REAL MEN GO FOR LEVEL 10',
+            'ja': '真の男ならレベル10へ挑め',
+            'ko': '진짜 남자라면 10레벨까지 가라',
+            'de': 'EIN ECHTER MANN SCHAFFT LEVEL 10',
+            'fr': 'UN VRAI HOMME ATTEINT LE NIVEAU 10',
+            'es': 'UN VERDADERO HOMBRE LLEGA AL NIVEL 10',
+            'es-419': '¡LOS HOMBRES DE VERDAD VAN HASTA EL NIVEL 10!',
+            'it': 'UN VERO UOMO ARRIVA AL LIVELLO 10',
+            'ru': 'НАСТОЯЩИЙ МУЖЧИНА ДОЙДЁТ ДО 10 УРОВНЯ',
+            'pt': 'UM HOMEM DE VERDADE CHEGA AO NÍVEL 10',
+            'ar': 'الرجل الحقيقي يصل إلى المستوى 10'
+        };
+
+        const candidates = [];
+        if (Array.isArray(navigator.languages)) candidates.push(...navigator.languages);
+        if (navigator.language) candidates.push(navigator.language);
+        try {
+            const intlLocale = (Intl.DateTimeFormat().resolvedOptions().locale || '');
+            if (intlLocale) candidates.push(intlLocale);
+        } catch (_) {}
+        candidates.push('en');
+
+        for (const raw of candidates) {
+            const lang = String(raw || '').toLowerCase();
+            if (!lang) continue;
+            // 完整匹配优先（如 es-419 / ar / zh-CN）
+            if (MAP[lang]) return { text: MAP[lang], rtl: lang.startsWith('ar') };
+            // 拉美西语区域映射到 es-419
+            if (lang.startsWith('es-') && /^(es-419|es-mx|es-ar|es-co|es-cl|es-pe)/.test(lang)) {
+                return { text: MAP['es-419'], rtl: false };
+            }
+            // 基础语言回退
+            const base = lang.split('-')[0];
+            if (MAP[base]) return { text: MAP[base], rtl: base === 'ar' };
+        }
+        return { text: MAP['en'], rtl: false };
     }
     
     // 加载世界排行榜数据
