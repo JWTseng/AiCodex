@@ -416,14 +416,14 @@ class GlobalAudioManager {
                 mainLP.frequency.setValueAtTime(700, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
-                mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.42);
+                mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.21);
                 const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.5;
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
-                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
                 mainOsc.connect(lowShelf).connect(mainLP).connect(mainGain).connect(slamBus);
                 mainOsc.start(now);
-                mainOsc.stop(now + 0.46);
+                mainOsc.stop(now + 0.23);
 
                 // 次低频：square 带谐波增强可听度
                 const subOsc = ctx.createOscillator();
@@ -433,14 +433,14 @@ class GlobalAudioManager {
                 subLP.frequency.setValueAtTime(600, now);
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
-                subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.34);
+                subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
                 const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.5;
                 subGain.gain.setValueAtTime(0, now);
                 subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
-                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                 subOsc.connect(subLP).connect(subGain).connect(slamBus);
                 subOsc.start(now);
-                subOsc.stop(now + 0.38);
+                subOsc.stop(now + 0.19);
 
                 // 冲击点击 + 第二击
                 const click = (t, freq, peak) => {
@@ -450,16 +450,16 @@ class GlobalAudioManager {
                     o.frequency.setValueAtTime(freq, t);
                     g.gain.setValueAtTime(0, t);
                     g.gain.linearRampToValueAtTime(peak, t + 0.002);
-                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.075);
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.037);
                     o.connect(g).connect(slamBus);
                     o.start(t);
-                    o.stop(t + 0.08);
+                    o.stop(t + 0.04);
                 };
                 click(now, 650, Math.min(0.48, this.sfxVolume * 0.7) * 0.5);
-                click(now + 0.03, 420, Math.min(0.32, this.sfxVolume * 0.5) * 0.5);
+                click(now + 0.015, 420, Math.min(0.32, this.sfxVolume * 0.5) * 0.5);
 
                 // 气压冲击：低频带通噪声
-                const noiseDur = 0.12;
+                const noiseDur = 0.06;
                 const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * noiseDur), ctx.sampleRate);
                 const ch = buf.getChannelData(0);
                 for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * 0.8;
@@ -473,7 +473,7 @@ class GlobalAudioManager {
                 const nvol = Math.min(0.35, this.sfxVolume * 0.5) * 0.5;
                 ng.gain.setValueAtTime(0, now);
                 ng.gain.linearRampToValueAtTime(nvol, now + 0.003);
-                ng.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                ng.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
                 noise.connect(bp).connect(ng).connect(slamBus);
                 noise.start(now);
                 noise.stop(now + noiseDur);

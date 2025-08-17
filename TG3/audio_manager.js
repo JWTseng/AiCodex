@@ -397,14 +397,14 @@ class GlobalAudioManager {
                 mainLP.Q && mainLP.Q.setValueAtTime(0.7, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
-                mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.42);
+                mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.21);
                 const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.5;
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
-                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
                 mainOsc.connect(lowShelf).connect(mainLP).connect(mainGain).connect(slamBus);
                 mainOsc.start(now);
-                mainOsc.stop(now + 0.46);
+                mainOsc.stop(now + 0.23);
 
                 // 次低频层（更可听）：方波带谐波，增强在普通设备上的可感知度
                 const subOsc = ctx.createOscillator();
@@ -414,14 +414,14 @@ class GlobalAudioManager {
                 subLP.frequency.setValueAtTime(600, now);
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
-                subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.34);
+                subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
                 const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.5;
                 subGain.gain.setValueAtTime(0, now);
                 subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
-                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
                 subOsc.connect(subLP).connect(subGain).connect(slamBus);
                 subOsc.start(now);
-                subOsc.stop(now + 0.38);
+                subOsc.stop(now + 0.19);
 
                 // 冲击瞬音：短三角波点击
                 const clickOsc = ctx.createOscillator();
@@ -430,7 +430,7 @@ class GlobalAudioManager {
                 clickOsc.frequency.setValueAtTime(650, now);
                 clickGain.gain.setValueAtTime(0, now);
                 clickGain.gain.linearRampToValueAtTime(Math.min(0.48, this.sfxVolume * 0.7) * 0.5, now + 0.002);
-                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.037);
                 clickOsc.connect(clickGain).connect(slamBus);
                 clickOsc.start(now);
                 clickOsc.stop(now + 0.08);
@@ -443,13 +443,13 @@ class GlobalAudioManager {
                 click2Osc.frequency.setValueAtTime(420, t2);
                 click2Gain.gain.setValueAtTime(0, t2);
                 click2Gain.gain.linearRampToValueAtTime(Math.min(0.32, this.sfxVolume * 0.5) * 0.5, t2 + 0.002);
-                click2Gain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.07);
+                click2Gain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.035);
                 click2Osc.connect(click2Gain).connect(slamBus);
                 click2Osc.start(t2);
                 click2Osc.stop(t2 + 0.08);
 
                 // 气压冲击层：更强的低频带通噪声
-                const noiseDur = 0.12;
+                const noiseDur = 0.06;
                 const noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * noiseDur), ctx.sampleRate);
                 const data = noiseBuf.getChannelData(0);
                 for (let i = 0; i < data.length; i++) {
@@ -465,7 +465,7 @@ class GlobalAudioManager {
                 const noiseVol = Math.min(0.35, this.sfxVolume * 0.5) * 0.5;
                 noiseGain.gain.setValueAtTime(0, now);
                 noiseGain.gain.linearRampToValueAtTime(noiseVol, now + 0.003);
-                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
                 noise.connect(noiseBP).connect(noiseGain).connect(slamBus);
                 noise.start(now);
                 noise.stop(now + noiseDur);
