@@ -99,9 +99,10 @@ class GlobalAudioManager {
             }
         };
         
-        // 添加事件监听器
-        interactionEvents.forEach(event => {
-            document.addEventListener(event, handleUserInteraction, { capture: true, once: true });
+        // 添加事件监听器（补充 pointerdown，覆盖iPad/Safari场景）
+        const events = [...interactionEvents, 'pointerdown'];
+        events.forEach(event => {
+            document.addEventListener(event, handleUserInteraction, { capture: true, once: true, passive: true });
         });
     }
     
@@ -242,7 +243,11 @@ class GlobalAudioManager {
             }
 
             // 确保有上下文与输出增益
-            if (!this.audioContext || !this.sfxGain) return;
+            if (!this.audioContext || !this.sfxGain) {
+                // iPad Safari: 在用户交互后仍可能未即时创建，尝试同步初始化一次
+                try { await this.initializeAudio(); } catch (_) {}
+                if (!this.audioContext || !this.sfxGain) return;
+            }
 
             // 如果被浏览器挂起，尝试立即恢复，并在恢复后紧接着播放，避免在suspended状态下丢帧
             const schedulePlay = () => {

@@ -41,6 +41,8 @@ class TetrisWorldLeaderboard {
         });
     }
 
+    
+
     // ===== 多语言标语 =====
     initLocalizedMotto() {
         const header = document.querySelector('.leaderboard-header');
@@ -48,11 +50,22 @@ class TetrisWorldLeaderboard {
 
         // 若已存在则不重复创建
         let mottoEl = document.getElementById('leaderboardMotto');
+        const titleEl = header.querySelector('.leaderboard-title');
         if (!mottoEl) {
             mottoEl = document.createElement('div');
             mottoEl.id = 'leaderboardMotto';
             mottoEl.className = 'leaderboard-motto';
-            header.appendChild(mottoEl);
+            // 插入到 TETRIS WORLD 标题之前
+            if (titleEl) {
+                header.insertBefore(mottoEl, titleEl);
+            } else {
+                header.insertBefore(mottoEl, header.firstChild);
+            }
+        } else {
+            // 确保位置：置于标题之前
+            if (titleEl && mottoEl.nextSibling !== titleEl) {
+                header.insertBefore(mottoEl, titleEl);
+            }
         }
 
         const { text, rtl } = this.pickMottoText();
@@ -64,6 +77,8 @@ class TetrisWorldLeaderboard {
             mottoEl.removeAttribute('dir');
             mottoEl.style.textAlign = '';
         }
+
+        // 保持基础主题样式
     }
 
     pickMottoText() {
