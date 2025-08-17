@@ -475,12 +475,9 @@ class NESTetris {
             });
         }
         
-        // 音频激活事件 - 确保用户交互后激活音频（兼容iPad）
-        const activate = () => this.activateAudio();
-        document.addEventListener('click', activate, { passive: true });
-        document.addEventListener('keydown', activate, { passive: true });
-        document.addEventListener('touchstart', activate, { passive: true });
-        document.addEventListener('pointerdown', activate, { passive: true });
+        // 音频激活事件 - 确保用户交互后激活音频
+        document.addEventListener('click', () => this.activateAudio());
+        document.addEventListener('keydown', () => this.activateAudio());
         
         // 音频控制事件 - 现在在start.html中处理
         // this.bindAudioControls();
@@ -488,25 +485,17 @@ class NESTetris {
     
     // 激活音频系统
     activateAudio() {
-        try {
-            if (!this.audio) return;
-            // 优先在手势内直接初始化，避免异步导致的解锁失败（iPad Safari）
-            if (!this.audio.isInitialized) {
-                const p = this.audio.initializeAudio();
-                // 不等待，尽量在手势栈内创建上下文
-                if (p && typeof p.then === 'function') {
-                    p.then(() => { try { this.audio.primeAudio(); } catch (_) {} }).catch(() => {});
-                }
-                return;
+        if (this.audio && this.audio.audioContext) {
+            if (this.audio.audioContext.state === 'suspended') {
+                this.audio.audioContext.resume().then(() => {
+                    if (this.DEBUG) console.log('音频上下文已激活');
+                    if (window.GameLogger) window.GameLogger.info('audio-resumed');
+                }).catch(error => {
+                    if (this.DEBUG) console.log('音频上下文激活失败:', error);
+                    if (window.GameLogger) window.GameLogger.error('audio-resume-failed', { error: String(error) });
+                });
             }
-            // 已存在上下文但被挂起时，直接resume
-            if (this.audio.audioContext && this.audio.audioContext.state === 'suspended') {
-                const pr = this.audio.audioContext.resume();
-                if (pr && typeof pr.then === 'function') {
-                    pr.then(() => { if (this.DEBUG) console.log('音频上下文已激活'); }).catch(() => {});
-                }
-            }
-        } catch (_) {}
+        }
     }
     
     handleInput() {
