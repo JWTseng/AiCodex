@@ -411,13 +411,13 @@ class GlobalAudioManager {
                 const mainLP = ctx.createBiquadFilter();
                 lowShelf.type = 'lowshelf';
                 lowShelf.frequency.setValueAtTime(120, now);
-                lowShelf.gain.setValueAtTime(7.5, now);
+                lowShelf.gain.setValueAtTime(4.5, now);
                 mainLP.type = 'lowpass';
                 mainLP.frequency.setValueAtTime(700, now);
                 mainOsc.type = 'sine';
                 mainOsc.frequency.setValueAtTime(240, now);
                 mainOsc.frequency.exponentialRampToValueAtTime(70, now + 0.21);
-                const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.5;
+                const mainVol = Math.min(0.95, this.sfxVolume * 1.1) * 0.3;
                 mainGain.gain.setValueAtTime(0, now);
                 mainGain.gain.linearRampToValueAtTime(mainVol, now + 0.006);
                 mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
@@ -434,7 +434,7 @@ class GlobalAudioManager {
                 subOsc.type = 'square';
                 subOsc.frequency.setValueAtTime(110, now);
                 subOsc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
-                const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.5;
+                const subVol = Math.min(0.60, this.sfxVolume * 0.85) * 0.3;
                 subGain.gain.setValueAtTime(0, now);
                 subGain.gain.linearRampToValueAtTime(subVol, now + 0.012);
                 subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
