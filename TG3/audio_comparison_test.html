@@ -260,7 +260,7 @@
         </div>
     </div>
 
-    <script src="audio_manager.js"></script>
+    <script src="src/js/audio_manager.js"></script>
     <script>
         let audioManager = null;
         let testResults = {};
@@ -280,6 +280,9 @@
             const statusElement = document.getElementById(`${type}-status`);
             
             try {
+                // 确保音频已就绪（不等待也能触发，但这里做一次非阻塞就绪）
+                try { audioManager.ensureAudioReady?.(); } catch (_) {}
+                try { audioManager.primeAudio?.(); } catch (_) {}
                 const startTime = performance.now();
                 await audioManager.playSFX(type);
                 const endTime = performance.now();
