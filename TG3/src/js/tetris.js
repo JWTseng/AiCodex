@@ -442,6 +442,16 @@ class NESTetris {
 
         // 初始化 NEW 按钮状态（未开始过任意一局时禁用）
         this.updateNewButtonState();
+
+        // 默认不显示解锁面板；如需调试可加 ?unlock=overlay 启用
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('unlock') === 'overlay') {
+                if (this.audio && this.audio.showUnlockOverlayIfNeeded) {
+                    this.audio.showUnlockOverlayIfNeeded();
+                }
+            }
+        } catch (_) {}
     }
     
     initPlayfield() {
