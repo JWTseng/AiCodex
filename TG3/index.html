@@ -6,8 +6,36 @@
     <title>CLASSIC NES TETRIS</title>
     <link rel="stylesheet" href="src/css/styles_responsive.css">
     <style>
-        .footer-controls { display: flex; gap: 16px; justify-content: center; margin-top: 12px; }
+        .footer-controls { 
+            display: flex; 
+            gap: 16px; 
+            justify-content: center; 
+            margin-top: 12px; 
+            flex-wrap: wrap;
+        }
         .footer-controls .game-btn { min-width: 140px; }
+        .version-btn {
+            background: linear-gradient(45deg, #1a1a2e, #16213e) !important;
+            border-color: #8bac0f !important;
+            color: #8bac0f !important;
+            font-size: 13px !important;
+            transition: all 0.3s ease !important;
+        }
+        .version-btn:hover {
+            background: linear-gradient(45deg, #8bac0f, #9bbc0f) !important;
+            color: #1a1a2e !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(139, 172, 15, 0.3) !important;
+        }
+        @media (max-width: 768px) {
+            .footer-controls {
+                gap: 12px;
+            }
+            .footer-controls .game-btn {
+                min-width: 120px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -168,6 +196,7 @@
             <button id="startBtn" class="game-btn">START</button>
             <button id="newBtn" class="game-btn">NEW GAME</button>
             <button id="settingsBtn" class="game-btn">SETTINGS</button>
+            <button class="game-btn version-btn" id="versionBtn" title="查看版本更新内容">📋 更新日志</button>
         </div>
     </div>
     
@@ -211,5 +240,101 @@
     <script src="src/js/tetris.js"></script>
     <script src="src/js/unified_scaling.js"></script>
     <script src="src/js/latency_overlay.js"></script>
+    
+    <!-- 版本管理功能 -->
+    <script type="module">
+        // 版本模态框功能 - 临时直接引入核心功能
+        console.log('%c🎮 Tetris World v3.0.0 "Clean Architecture"', 
+            'color: #00ff00; font-weight: bold; font-size: 14px;');
+        console.log('📅 发布日期: 2025年8月18日');
+        console.log('🏗️ TypeScript + Vite 现代化架构');
+        console.log('🧪 包含43个单元测试');
+        console.log('💡 点击 "📋 更新日志" 按钮查看详细更新内容');
+        
+        // 简化版本显示功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const versionBtn = document.getElementById('versionBtn');
+            
+            if (versionBtn) {
+                versionBtn.addEventListener('click', function() {
+                    // 创建简化版本信息弹窗
+                    showVersionInfo();
+                });
+            }
+            
+            function showVersionInfo() {
+                const modal = document.createElement('div');
+                modal.id = 'version-info-modal';
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.8); z-index: 10000;
+                    display: flex; justify-content: center; align-items: center;
+                `;
+                
+                modal.innerHTML = \`
+                    <div style="
+                        background: #1a1a2e; border: 2px solid #00ff00; border-radius: 8px;
+                        max-width: 600px; width: 90%; color: #00ff00;
+                        font-family: 'Courier New', monospace; padding: 20px;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <h2 style="margin: 0; color: #00ff00;">🎮 Tetris World v3.0.0</h2>
+                                <p style="margin: 5px 0; color: #8bac0f; font-style: italic;">"Clean Architecture"</p>
+                                <p style="margin: 0; font-size: 12px; color: #888;">发布日期: 2025年8月18日</p>
+                            </div>
+                            <button id="close-version-modal" style="
+                                background: transparent; border: 1px solid #00ff00; color: #00ff00;
+                                width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-size: 16px;
+                            ">×</button>
+                        </div>
+                        
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <h3 style="color: #00ff00; margin: 16px 0 8px 0;">✨ 主要新功能</h3>
+                            <ul style="color: #bbb; line-height: 1.6; margin: 0; padding-left: 20px;">
+                                <li>🏗️ 现代化架构重构 - TypeScript + Vite 构建系统</li>
+                                <li>🧪 完整测试套件 - 43个单元测试覆盖核心模块</li>
+                                <li>⚡ 高级连击系统 - 3秒窗口，最高2倍分数乘数</li>
+                                <li>🎯 7位数分数系统 - 最高9,999,999分挑战</li>
+                                <li>🌍 全球排行榜 - 实时云端排行榜竞技</li>
+                                <li>🎮 多输入设备支持 - 键盘、手柄、触觉反馈</li>
+                                <li>📱 响应式设计 - 完美适配多种设备</li>
+                                <li>🔬 Beta功能预览 - 添加?beta=1体验新功能</li>
+                            </ul>
+                            
+                            <h3 style="color: #00ff00; margin: 16px 0 8px 0;">🔧 改进优化</h3>
+                            <ul style="color: #bbb; line-height: 1.6; margin: 0; padding-left: 20px;">
+                                <li>优化音频系统，减少延迟和卡顿</li>
+                                <li>改进iPad自动缩放，提升移动端体验</li>
+                                <li>增强玩家名称管理和排名显示</li>
+                                <li>完善多语言本地化支持</li>
+                                <li>添加实时延迟监控和性能优化</li>
+                            </ul>
+                            
+                            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #333; font-size: 11px; color: #666;">
+                                🏗️ 基于 TypeScript + Vite 构建 &nbsp;&nbsp; 🧪 包含 43 个单元测试
+                            </div>
+                        </div>
+                    </div>
+                \`;
+                
+                document.body.appendChild(modal);
+                
+                // 绑定关闭事件
+                document.getElementById('close-version-modal').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                });
+            }
+            
+            // 全局函数
+            window.showVersion = showVersionInfo;
+        });
+    </script>
 </body>
 </html>
