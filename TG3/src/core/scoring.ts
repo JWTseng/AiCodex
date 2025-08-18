@@ -1,4 +1,5 @@
 import type { ComboInfo } from '@/types/game';
+import { config } from '@/config/environment';
 
 // 经典NES俄罗斯方块计分规则
 export const SCORE_VALUES = {
@@ -16,7 +17,7 @@ export class ScoringSystem {
   private lines: number = 0;
   private comboCount: number = 0;
   private comboTimer: number = 0;
-  private readonly comboWindow: number = 3000; // 3秒连击窗口
+  private readonly comboWindow: number = config.game.comboWindow;
 
   constructor() {
     this.reset();
@@ -60,9 +61,10 @@ export class ScoringSystem {
     this.lines += linesCleared;
     
     // 限制最大分数
-    if (this.score > 9999999) {
-      finalScore -= (this.score - 9999999); // 调整返回值
-      this.score = 9999999;
+    const maxScore = config.game.maxScore;
+    if (this.score > maxScore) {
+      finalScore -= (this.score - maxScore); // 调整返回值
+      this.score = maxScore;
     }
 
     return finalScore;
@@ -72,8 +74,9 @@ export class ScoringSystem {
     const dropScore = distance * (isHard ? SCORE_VALUES.HARD_DROP : SCORE_VALUES.SOFT_DROP);
     this.score += dropScore;
     
-    if (this.score > 9999999) {
-      this.score = 9999999;
+    const maxScore = config.game.maxScore;
+    if (this.score > maxScore) {
+      this.score = maxScore;
     }
     
     return dropScore;

@@ -1,4 +1,4 @@
-import type { Piece, PieceType, Position } from '@/types/game';
+import type { Piece, PieceType } from '@/types/game';
 
 // 方块形状定义 (经典NES俄罗斯方块)
 export const PIECE_SHAPES: Record<PieceType, number[][][]> = {

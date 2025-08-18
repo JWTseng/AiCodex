@@ -1,4 +1,4 @@
-import type { Piece, Position } from '@/types/game';
+import type { Piece } from '@/types/game';
 
 export const BOARD_WIDTH = 10;
 export const BOARD_HEIGHT = 20;

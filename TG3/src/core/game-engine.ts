@@ -1,4 +1,4 @@
-import type { GameState, Piece, InputState } from '@/types/game';
+import type { GameState, InputState } from '@/types/game';
 import { GameBoard } from './board';
 import { PieceFactory } from './pieces';
 import { ScoringSystem } from './scoring';

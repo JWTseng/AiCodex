@@ -8,10 +8,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
-      input: {
-        main: './TG3/index.html',
-        beta: './beta/index.html'
-      }
+      input: './TG3/index.html'
     }
   },
   server: {

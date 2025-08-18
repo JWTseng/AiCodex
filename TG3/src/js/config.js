@@ -1,8 +1,17 @@
 // Global configuration for TETRIS WORLD frontend
 // Centralize service endpoints to avoid scattering URLs across modules
 
+// 导入新的配置系统
+import { config } from '../config/environment.js';
+
+// 向后兼容的全局配置
 window.TW_CONFIG = {
-    API_URL: 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec'
+    API_URL: config.api.baseUrl,
+    MAX_SCORE: config.game.maxScore,
+    DEBUG: config.features.debug,
+    
+    // 保留原有配置
+    ...config
 };
 
 
