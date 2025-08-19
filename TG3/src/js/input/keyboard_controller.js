@@ -40,18 +40,29 @@
             const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
             switch(e.code) {
                 case 'Enter': this.state.enter = true; break;
-                case 'ArrowLeft': case 'KeyA': this.state.left = true; if (!typing) e.preventDefault(); break;
-                case 'ArrowRight': case 'KeyD': this.state.right = true; if (!typing) e.preventDefault(); break;
-                case 'ArrowDown': case 'KeyS': this.state.down = true; if (!typing) e.preventDefault(); break;
+                
+                // 移动: A D (主要) + 方向键 (兼容)
+                case 'KeyA': case 'ArrowLeft': this.state.left = true; if (!typing) e.preventDefault(); break;
+                case 'KeyD': case 'ArrowRight': this.state.right = true; if (!typing) e.preventDefault(); break;
+                
+                // 软降: S (主要) + ↓ (兼容)
+                case 'KeyS': case 'ArrowDown': this.state.down = true; if (!typing) e.preventDefault(); break;
+                
+                // 旋转: Q E (主要) + ↑ (兼容顺时针)
                 case 'KeyQ': this.state.rotateCCW = true; break;
-                case 'KeyE': this.state.rotateCW = true; break;
-                case 'ArrowUp': this.state.rotateCW = true; if (!typing) e.preventDefault(); break;
-                case 'Escape': case 'KeyP': this.state.pause = true; break;
-                case 'KeyR': this.state.reset = true; break;
-                case 'KeyM': this.state.musicToggle = true; break;
+                case 'KeyE': case 'ArrowUp': this.state.rotateCW = true; if (!typing) e.preventDefault(); break;
+                
+                // 暂停: P (主要) + Esc (兼容)
+                case 'KeyP': case 'Escape': this.state.pause = true; break;
+                
+                // 硬降: Space (现代标准)
                 case 'Space':
                 case 'Spacebar': // 兼容旧Safari
-                    this.state.hardDrop = true; if (!typing) e.preventDefault(); break; // 空格：硬降
+                    this.state.hardDrop = true; if (!typing) e.preventDefault(); break;
+                
+                // 额外功能键
+                case 'KeyR': this.state.reset = true; break;
+                case 'KeyM': this.state.musicToggle = true; break;
             }
         }
 
@@ -60,18 +71,29 @@
             const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
             switch(e.code) {
                 case 'Enter': this.state.enter = false; break;
-                case 'ArrowLeft': case 'KeyA': this.state.left = false; if (!typing) e.preventDefault(); break;
-                case 'ArrowRight': case 'KeyD': this.state.right = false; if (!typing) e.preventDefault(); break;
-                case 'ArrowDown': case 'KeyS': this.state.down = false; if (!typing) e.preventDefault(); break;
+                
+                // 移动: A D (主要) + 方向键 (兼容)
+                case 'KeyA': case 'ArrowLeft': this.state.left = false; if (!typing) e.preventDefault(); break;
+                case 'KeyD': case 'ArrowRight': this.state.right = false; if (!typing) e.preventDefault(); break;
+                
+                // 软降: S (主要) + ↓ (兼容)
+                case 'KeyS': case 'ArrowDown': this.state.down = false; if (!typing) e.preventDefault(); break;
+                
+                // 旋转: Q E (主要) + ↑ (兼容顺时针)
                 case 'KeyQ': this.state.rotateCCW = false; break;
-                case 'KeyE': this.state.rotateCW = false; break;
-                case 'ArrowUp': this.state.rotateCW = false; if (!typing) e.preventDefault(); break;
-                case 'Escape': case 'KeyP': this.state.pause = false; break;
-                case 'KeyR': this.state.reset = false; break;
-                case 'KeyM': this.state.musicToggle = false; break;
+                case 'KeyE': case 'ArrowUp': this.state.rotateCW = false; if (!typing) e.preventDefault(); break;
+                
+                // 暂停: P (主要) + Esc (兼容)
+                case 'KeyP': case 'Escape': this.state.pause = false; break;
+                
+                // 硬降: Space (现代标准)
                 case 'Space':
                 case 'Spacebar':
                     this.state.hardDrop = false; if (!typing) e.preventDefault(); break;
+                
+                // 额外功能键
+                case 'KeyR': this.state.reset = false; break;
+                case 'KeyM': this.state.musicToggle = false; break;
             }
         }
 

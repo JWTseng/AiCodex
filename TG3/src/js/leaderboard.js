@@ -12,6 +12,9 @@ class TetrisWorldLeaderboard {
         this.serverTimeBaseMs = null; // 服务器时间基准（毫秒，UTC）
         this.serverTimeStartLocalMs = null; // 本地开始计时的时间（毫秒）
         
+        // 去重功能设置
+        this.deduplicationEnabled = localStorage.getItem('leaderboard-deduplication') !== 'false';
+        
         this.init();
     }
     
@@ -142,7 +145,7 @@ class TetrisWorldLeaderboard {
             this.updateServerTime();
             const newSignature = this.computeSignature(scores);
             if (newSignature !== this.lastSignature) {
-                this.worldScores = scores;
+                this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(scores) : scores;
                 this.renderLeaderboard();
                 this.lastSignature = newSignature;
             }
@@ -259,6 +262,9 @@ class TetrisWorldLeaderboard {
         }
         
         document.getElementById('leaderboardTableContainer').style.display = 'block';
+        
+        // 注释：去重状态显示已移除
+        // this.updateDedupStatus();
         
         // 检查玩家是否进入Top50
         this.checkPlayerTop50Status();
@@ -406,6 +412,164 @@ class TetrisWorldLeaderboard {
     // 获取玩家名称
     getPlayerName() {
         return this.playerName || 'Anonymous';
+    }
+
+    /**
+     * 同名用户去重处理
+     * 策略：保留每个玩家的最高分记录，分数相同时保留最新记录
+     * @param {Array} scores 原始分数数据
+     * @returns {Array} 去重后的分数数据
+     */
+    deduplicateScores(scores) {
+        if (!Array.isArray(scores) || scores.length === 0) {
+            return scores;
+        }
+
+        console.log('🔍 开始去重处理，原始记录数：', scores.length);
+        
+        const uniqueScores = new Map();
+        let duplicateCount = 0;
+
+        scores.forEach((score, index) => {
+            // 标准化玩家名称：去除首尾空格，转换为小写用于比较
+            const normalizedName = (score.name || '').trim().toLowerCase();
+            
+            // 跳过空名称
+            if (!normalizedName) {
+                console.warn('⚠️ 跳过空名称记录：', score);
+                return;
+            }
+
+            const existing = uniqueScores.get(normalizedName);
+            
+            if (!existing) {
+                // 首次遇到该用户，直接保存
+                uniqueScores.set(normalizedName, {
+                    ...score,
+                    originalName: score.name, // 保留原始名称格式
+                    processedAt: Date.now()
+                });
+            } else {
+                duplicateCount++;
+                
+                // 判断是否需要替换现有记录
+                let shouldReplace = false;
+                let reason = '';
+
+                if (score.score > existing.score) {
+                    shouldReplace = true;
+                    reason = `更高分数 (${score.score} > ${existing.score})`;
+                } else if (score.score === existing.score) {
+                    // 分数相同，比较时间戳（如果有的话）
+                    if (score.timestamp && existing.timestamp) {
+                        if (new Date(score.timestamp) > new Date(existing.timestamp)) {
+                            shouldReplace = true;
+                            reason = `相同分数但更新时间 (${score.timestamp} > ${existing.timestamp})`;
+                        }
+                    } else if (index < scores.indexOf(existing)) {
+                        // 没有时间戳时，假设数组前面的记录较新
+                        shouldReplace = true;
+                        reason = '相同分数且位置更前';
+                    }
+                }
+
+                if (shouldReplace) {
+                    console.log(`🔄 替换玩家 "${score.name}" 的记录: ${reason}`);
+                    uniqueScores.set(normalizedName, {
+                        ...score,
+                        originalName: score.name,
+                        processedAt: Date.now()
+                    });
+                } else {
+                    console.log(`⏭️ 保持玩家 "${existing.originalName}" 的现有记录，跳过 "${score.name}"`);
+                }
+            }
+        });
+
+        // 转换回数组并按分数排序
+        const deduplicatedScores = Array.from(uniqueScores.values())
+            .map(score => ({
+                name: score.originalName, // 使用原始名称格式
+                score: score.score,
+                level: score.level,
+                lines: score.lines,
+                duration: score.duration,
+                timestamp: score.timestamp
+            }))
+            .sort((a, b) => b.score - a.score);
+
+        console.log(`✅ 去重完成：${scores.length} → ${deduplicatedScores.length} (-${duplicateCount} 重复)`);
+        
+        // 如果有重复项目被移除，显示统计信息
+        if (duplicateCount > 0) {
+            const uniquePlayers = uniqueScores.size;
+            console.log(`📊 去重统计：${uniquePlayers} 位独特玩家，移除 ${duplicateCount} 条重复记录`);
+        }
+
+        return deduplicatedScores;
+    }
+
+    /**
+     * 测试去重功能 - 开发调试用
+     */
+    testDeduplication() {
+        console.log('🧪 开始测试去重功能...');
+        
+        const testData = [
+            { name: 'Alice', score: 15000, level: 5, lines: 45, duration: 180000 },
+            { name: 'alice', score: 12000, level: 4, lines: 35, duration: 150000 }, // 同名小写，低分
+            { name: 'Bob', score: 20000, level: 7, lines: 60, duration: 250000 },
+            { name: 'Alice ', score: 18000, level: 6, lines: 50, duration: 200000 }, // 同名带空格，更高分
+            { name: 'Charlie', score: 10000, level: 3, lines: 25, duration: 120000 },
+            { name: 'BOB', score: 20000, level: 7, lines: 60, duration: 250000 }, // 同名大写，相同分数
+            { name: 'David', score: 25000, level: 8, lines: 70, duration: 300000 },
+            { name: '', score: 30000, level: 9, lines: 80, duration: 350000 }, // 空名称
+        ];
+
+        console.log('📊 测试数据：', testData);
+        
+        const result = this.deduplicateScores(testData);
+        
+        console.log('🎯 去重结果：', result);
+        console.log('🔍 期望结果：Alice(18000), David(25000), Bob(20000), Charlie(10000)');
+        
+        return result;
+    }
+
+    /**
+     * 启用/禁用去重功能
+     * @param {boolean} enabled 是否启用去重
+     */
+    setDeduplicationEnabled(enabled) {
+        this.deduplicationEnabled = enabled;
+        localStorage.setItem('leaderboard-deduplication', enabled.toString());
+        console.log(`🔧 排行榜去重功能已${enabled ? '启用' : '禁用'}`);
+        
+        // 立即刷新排行榜以应用变更
+        this.loadWorldScores({ silent: true });
+    }
+
+    /**
+     * 获取去重功能状态
+     */
+    isDeduplicationEnabled() {
+        return this.deduplicationEnabled;
+    }
+
+    /**
+     * 更新去重状态显示
+     */
+    updateDedupStatus() {
+        const statusElement = document.getElementById('leaderboardDedupStatus');
+        if (statusElement) {
+            if (this.deduplicationEnabled) {
+                statusElement.innerHTML = '🔍 同名用户已去重 • 仅显示最高分';
+                statusElement.style.color = '#8bac0f';
+            } else {
+                statusElement.innerHTML = '📋 显示全部记录 • 未去重';
+                statusElement.style.color = '#ffa500';
+            }
+        }
     }
 }
 
