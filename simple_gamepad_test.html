@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单手柄测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f380f;
+            color: white;
+            padding: 20px;
+        }
+        .status {
+            background-color: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .connected { color: #4CAF50; }
+        .disconnected { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🎮 手柄连接测试</h1>
+    
+    <div class="status">
+        <h3>连接状态</h3>
+        <div id="status">检测中...</div>
+    </div>
+    
+    <div class="status">
+        <h3>手柄信息</h3>
+        <div id="info">等待连接...</div>
+    </div>
+    
+    <div class="status">
+        <h3>按钮测试</h3>
+        <div id="buttons">按下手柄按钮测试</div>
+    </div>
+    
+    <div class="status">
+        <h3>摇杆测试</h3>
+        <div id="axes">移动摇杆测试</div>
+    </div>
+    
+    <button onclick="testVibration()" style="padding: 10px 20px; margin: 10px;">测试振动</button>
+    
+    <script>
+        let gamepads = [];
+        
+        // 检测Gamepad API支持
+        if (!navigator.getGamepads && !navigator.webkitGetGamepads) {
+            document.getElementById('status').innerHTML = '<span class="disconnected">❌ 浏览器不支持Gamepad API</span>';
+        } else {
+            document.getElementById('status').innerHTML = '<span class="connected">✅ Gamepad API 支持</span>';
+        }
+        
+        // 监听手柄连接
+        window.addEventListener('gamepadconnected', (e) => {
+            console.log('手柄已连接:', e.gamepad);
+            updateStatus();
+        });
+        
+        // 监听手柄断开
+        window.addEventListener('gamepaddisconnected', (e) => {
+            console.log('手柄已断开:', e.gamepad);
+            updateStatus();
+        });
+        
+        function updateStatus() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : navigator.webkitGetGamepads();
+            const connectedGamepads = gamepads.filter(g => g);
+            
+            if (connectedGamepads.length > 0) {
+                const gamepad = connectedGamepads[0];
+                document.getElementById('status').innerHTML = 
+                    `<span class="connected">✅ 手柄已连接: ${gamepad.id}</span>`;
+                
+                document.getElementById('info').innerHTML = `
+                    ID: ${gamepad.id}<br>
+                    索引: ${gamepad.index}<br>
+                    按钮数: ${gamepad.buttons.length}<br>
+                    摇杆数: ${gamepad.axes.length}
+                `;
+                
+                // 更新按钮状态
+                let buttonHTML = '';
+                for (let i = 0; i < gamepad.buttons.length; i++) {
+                    const button = gamepad.buttons[i];
+                    if (button.pressed) {
+                        buttonHTML += `<span style="color: #4CAF50;">按钮${i}</span> `;
+                    }
+                }
+                document.getElementById('buttons').innerHTML = buttonHTML || '无按钮按下';
+                
+                // 更新摇杆状态
+                let axisHTML = '';
+                for (let i = 0; i < gamepad.axes.length; i++) {
+                    const value = gamepad.axes[i];
+                    if (Math.abs(value) > 0.1) {
+                        axisHTML += `<span style="color: #4CAF50;">摇杆${i}: ${value.toFixed(2)}</span> `;
+                    }
+                }
+                document.getElementById('axes').innerHTML = axisHTML || '摇杆居中';
+                
+            } else {
+                document.getElementById('status').innerHTML = 
+                    '<span class="disconnected">❌ 未检测到手柄</span>';
+                document.getElementById('info').innerHTML = '请连接手柄';
+                document.getElementById('buttons').innerHTML = '无手柄连接';
+                document.getElementById('axes').innerHTML = '无手柄连接';
+            }
+        }
+        
+        function testVibration() {
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50]);
+                alert('振动测试完成');
+            } else {
+                alert('浏览器不支持振动功能');
+            }
+        }
+        
+        // 定期更新状态
+        setInterval(updateStatus, 100);
+        
+        // 初始更新
+        updateStatus();
+    </script>
+</body>
+</html>

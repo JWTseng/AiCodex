@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>方块生成系统对比测试</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #0f380f; color: #00ff00; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .comparison { display: flex; gap: 40px; }
+        .version { flex: 1; }
+        .stats { background: #1a1a2e; padding: 15px; margin: 10px 0; border: 1px solid #00ff00; }
+        .sequence { font-size: 12px; line-height: 1.6; }
+        button { background: #00ff00; color: #0f380f; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .difficulty { color: #ff6b00; font-weight: bold; }
+        .chart { height: 200px; background: #1a1a2e; margin: 10px 0; padding: 10px; border: 1px solid #00ff00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Tetris 方块生成系统对比测试</h1>
+        
+        <div class="comparison">
+            <div class="version">
+                <h2>v3.0 "NES经典随机"</h2>
+                <button onclick="testOldSystem()">生成100个方块</button>
+                <div class="stats" id="oldStats"></div>
+                <div class="sequence" id="oldSequence"></div>
+            </div>
+            
+            <div class="version">
+                <h2>v3.1 "7-Bag现代随机"</h2>
+                <button onclick="testNewSystem()">生成100个方块</button>
+                <div class="stats" id="newStats"></div>
+                <div class="sequence" id="newSequence"></div>
+            </div>
+        </div>
+        
+        <div id="analysis"></div>
+    </div>
+
+    <script>
+        // v3.0 NES经典随机系统
+        class OldRandomSystem {
+            constructor() {
+                this.rngState = Date.now() % 0x7fffffff;
+                this.lastPiece = -1;
+                this.pieceNames = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+            }
+            
+            randomInt(min, max) {
+                this.rngState = (this.rngState * 1103515245 + 12345) & 0x7fffffff;
+                return min + (this.rngState % (max - min + 1));
+            }
+            
+            generateNextPiece() {
+                let attempts = 0;
+                let pieceType;
+                
+                do {
+                    if (attempts === 0) {
+                        pieceType = this.randomInt(0, 7);
+                    } else {
+                        pieceType = this.randomInt(0, 6);
+                    }
+                    attempts++;
+                } while (pieceType === 7 || (attempts === 1 && pieceType === this.lastPiece));
+                
+                this.lastPiece = pieceType;
+                return this.pieceNames[pieceType];
+            }
+        }
+        
+        // v3.1 7-Bag现代随机系统
+        class NewRandomSystem {
+            constructor() {
+                this.pieceBag = [];
+                this.bagIndex = 0;
+                this.pieceNames = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+            }
+            
+            createNewBag() {
+                this.pieceBag = [...this.pieceNames];
+                for (let i = this.pieceBag.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.pieceBag[i], this.pieceBag[j]] = [this.pieceBag[j], this.pieceBag[i]];
+                }
+            }
+            
+            generateNextPiece() {
+                if (this.pieceBag.length === 0 || this.bagIndex >= this.pieceBag.length) {
+                    this.createNewBag();
+                    this.bagIndex = 0;
+                }
+                
+                const pieceName = this.pieceBag[this.bagIndex];
+                this.bagIndex++;
+                return pieceName;
+            }
+        }
+        
+        function testOldSystem() {
+            console.log('🧪 测试v3.0 NES经典随机系统...');
+            const system = new OldRandomSystem();
+            const pieces = [];
+            
+            for (let i = 0; i < 100; i++) {
+                pieces.push(system.generateNextPiece());
+            }
+            
+            displayResults('old', pieces);
+        }
+        
+        function testNewSystem() {
+            console.log('🧪 测试v3.1 7-Bag现代随机系统...');
+            const system = new NewRandomSystem();
+            const pieces = [];
+            
+            for (let i = 0; i < 100; i++) {
+                pieces.push(system.generateNextPiece());
+            }
+            
+            displayResults('new', pieces);
+        }
+        
+        function displayResults(type, pieces) {
+            const counts = {};
+            const streaks = {};
+            let currentStreak = 1;
+            let maxStreak = 1;
+            let currentPiece = pieces[0];
+            
+            // 统计方块分布
+            pieces.forEach(piece => {
+                counts[piece] = (counts[piece] || 0) + 1;
+            });
+            
+            // 统计连续出现
+            for (let i = 1; i < pieces.length; i++) {
+                if (pieces[i] === currentPiece) {
+                    currentStreak++;
+                } else {
+                    streaks[currentPiece] = Math.max(streaks[currentPiece] || 0, currentStreak);
+                    maxStreak = Math.max(maxStreak, currentStreak);
+                    currentPiece = pieces[i];
+                    currentStreak = 1;
+                }
+            }
+            streaks[currentPiece] = Math.max(streaks[currentPiece] || 0, currentStreak);
+            
+            // 计算方差（衡量分布均匀性）
+            const average = 100 / 7;
+            const variance = Object.values(counts).reduce((acc, count) => 
+                acc + Math.pow(count - average, 2), 0) / 7;
+            
+            // 计算"坏运气"指数
+            const iDrought = findLongestDrought(pieces, 'I');
+            const badLuckScore = Math.max(0, iDrought - 12) + Math.max(0, maxStreak - 2) + variance;
+            
+            const statsHTML = `
+                <h3>📊 统计结果</h3>
+                <div><strong>分布情况:</strong></div>
+                ${Object.entries(counts).map(([piece, count]) => 
+                    `${piece}: ${count}次 (${(count/100*100).toFixed(1)}%)`
+                ).join('<br>')}
+                <br><br>
+                <div><strong>连续出现最大次数:</strong> ${maxStreak}次</div>
+                <div><strong>最长I方块间隔:</strong> ${iDrought}个方块</div>
+                <div><strong>分布方差:</strong> ${variance.toFixed(2)}</div>
+                <div class="difficulty"><strong>"坏运气"指数:</strong> ${badLuckScore.toFixed(1)}</div>
+                <div style="font-size: 10px; color: #888; margin-top: 10px;">
+                    理想分布: 每种方块约14.3次 (14-15次)<br>
+                    理想I间隔: ≤12个方块<br>
+                    坏运气指数越高，游戏体验越差
+                </div>
+            `;
+            
+            const sequenceHTML = `
+                <h3>🔢 方块序列 (前50个)</h3>
+                <div style="font-size: 11px; word-break: break-all;">
+                    ${pieces.slice(0, 50).join(' → ')}
+                </div>
+            `;
+            
+            document.getElementById(type + 'Stats').innerHTML = statsHTML;
+            document.getElementById(type + 'Sequence').innerHTML = sequenceHTML;
+            
+            // 如果两个系统都测试过了，显示对比分析
+            if (document.getElementById('oldStats').innerHTML && document.getElementById('newStats').innerHTML) {
+                showComparison();
+            }
+        }
+        
+        function findLongestDrought(pieces, targetPiece) {
+            let maxDrought = 0;
+            let currentDrought = 0;
+            
+            for (const piece of pieces) {
+                if (piece === targetPiece) {
+                    maxDrought = Math.max(maxDrought, currentDrought);
+                    currentDrought = 0;
+                } else {
+                    currentDrought++;
+                }
+            }
+            
+            return Math.max(maxDrought, currentDrought);
+        }
+        
+        function showComparison() {
+            const analysisHTML = `
+                <div class="stats">
+                    <h2>🔍 系统差异分析</h2>
+                    
+                    <h3>核心区别：</h3>
+                    <div style="display: flex; gap: 20px;">
+                        <div style="flex: 1;">
+                            <h4 style="color: #ff6b00;">v3.0 NES经典系统特点:</h4>
+                            <ul>
+                                <li>完全随机，有概率连续出现同种方块</li>
+                                <li>可能出现长时间没有I方块的"干旱"</li>
+                                <li>分布不均匀，符合人类对"随机"的认知</li>
+                                <li>有时会给玩家"坏运气"的挫败感</li>
+                                <li><strong>更接近原版NES体验</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <div style="flex: 1;">
+                            <h4 style="color: #00ff00;">v3.1 7-Bag现代系统特点:</h4>
+                            <ul>
+                                <li>每7个方块确保包含所有类型</li>
+                                <li>I方块最多间隔13个方块就会出现</li>
+                                <li>分布更均匀，减少极端情况</li>
+                                <li>更"公平"，减少运气成分</li>
+                                <li><strong>现代竞技俄罗斯方块标准</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3 style="color: #ff6b00;">为什么感觉"变难"了？</h3>
+                    <ol>
+                        <li><strong>预期心理改变</strong>: 7-Bag让方块出现更可预测，反而让意外情况显得更突出</li>
+                        <li><strong>策略需要调整</strong>: 老玩家习惯了NES的随机性，需要适应新的规律</li>
+                        <li><strong>技巧要求提高</strong>: 现代系统配合新的T-Spin等技巧，对操作精度要求更高</li>
+                        <li><strong>分数压力</strong>: 新的Back-to-Back系统让玩家感受到更大的技巧压力</li>
+                    </ol>
+                    
+                    <div style="background: #1a1a46; padding: 15px; margin: 15px 0; border-left: 4px solid #ff6b00;">
+                        <strong>💡 建议:</strong> 如果想要经典体验，可以考虑添加"复古模式"开关，让玩家选择使用哪种随机系统。
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('analysis').innerHTML = analysisHTML;
+        }
+        
+        // 自动运行一次测试来展示差异
+        window.onload = function() {
+            setTimeout(() => {
+                testOldSystem();
+                setTimeout(() => testNewSystem(), 500);
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

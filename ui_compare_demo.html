@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UI 对比演示 | 霓虹绿复古风</title>
+  <style>
+    :root {
+      /* 霓虹绿色复古配色 */
+      --bg: #0b160d;
+      --panel: #162716;
+      --panel-2: #1b301b;
+      --border: #87d35f;
+      --border-dim: #4e7f3a;
+      --text: #c8f7c0;
+      --muted: #a2c7a2;
+      --accent: #b7ff5a;
+      --danger: #ff6b6b;
+      --shadow: 0 0 0 1px var(--border) inset, 0 0 16px rgba(135, 211, 95, 0.35), 0 0 60px rgba(135, 211, 95, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% -10%, rgba(183,255,90,0.08), transparent) , var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      line-height: 1.4;
+    }
+
+    .wrapper {
+      max-width: 1320px;
+      margin: 24px auto 48px;
+      padding: 0 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title {
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(183,255,90,0.4);
+    }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .frame {
+      background: linear-gradient(180deg, rgba(135,211,95,0.06), rgba(135,211,95,0.02)) , var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      position: relative;
+      box-shadow: 0 0 0 3px rgba(135,211,95,0.2) inset, 0 14px 60px rgba(0,0,0,0.35);
+      min-height: 680px;
+    }
+    .frame h3 { margin: 0 0 10px; color: var(--accent); font-weight: 800; letter-spacing: .5px; }
+    .frame .sub { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+
+    /*—— 左侧：原设计复刻 ——*/
+    .original {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      min-height: 54px;
+    }
+    .card .label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    .card .value { font-size: 24px; font-weight: 800; }
+    .value.danger { color: var(--danger); }
+
+    .layout-original {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      min-height: 0;
+    }
+    .playfield { height: 480px; }
+    .next, .kbd, .highscores { min-height: 120px; }
+    .kbd li { list-style: none; padding: 4px 0; color: var(--muted); }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .table th, .table td { padding: 6px 8px; border-bottom: 1px dashed var(--border-dim); text-align: left; }
+    .table th { color: var(--muted); font-weight: 600; }
+
+    .footer-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /*—— 右侧：我理解的 Classic 三栏 ——*/
+    .mine {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow);
+    }
+    .mono { font-variant-numeric: tabular-nums; }
+    .layout-mine { display: grid; grid-template-columns: 280px 1fr 300px; gap: 12px; min-height: 0; }
+
+    .session .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .session .kv { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; box-shadow: var(--shadow); }
+    .session .kv .k { color: var(--muted); font-size: 12px; }
+    .session .kv .v { font-size: 20px; font-weight: 800; }
+
+    .game-area { background: radial-gradient(400px 240px at 50% 30%, rgba(183,255,90,0.08), transparent) , #0e1b0e; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
+    .game-area .hint { text-align: center; color: var(--muted); }
+    .game-area .hint h4 { color: var(--accent); margin-bottom: 6px; }
+
+    .rank .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .muted { color: var(--muted); }
+
+    .bottombar { display:flex; align-items:center; justify-content: space-between; gap: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; box-shadow: var(--shadow); }
+
+    /* 视图切换 */
+    .is-single .grid { grid-template-columns: 1fr; }
+    .is-single .frame { min-height: 720px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper" id="app">
+    <div class="toolbar">
+      <div>
+        <div class="title">TETRIS UI 临时演示（中文说明）</div>
+        <div class="note">左侧：根据你提供的图稿进行复刻；右侧：我对最终游戏内 Classic 三栏布局的理解。配色保持霓虹绿复古风。</div>
+      </div>
+      <div class="controls">
+        <button class="btn" data-view="dual">并排查看</button>
+        <button class="btn" data-view="left">只看原稿</button>
+        <button class="btn" data-view="right">只看我的理解</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid">
+      <!-- 原设计复刻 -->
+      <section class="frame original" aria-label="原稿复刻">
+        <h3>原稿复刻</h3>
+        <div class="sub">布局：顶部统计栏 + 左大棋盘/右侧栏（下一块、键位说明、高分榜）+ 底部按钮。</div>
+
+        <div class="stats-bar">
+          <div class="card">
+            <div class="label">SCORE 分数</div>
+            <div class="value mono">000000</div>
+          </div>
+          <div class="card">
+            <div class="label">COMBO 连击</div>
+            <div class="value danger mono">x0</div>
+          </div>
+          <div class="card">
+            <div class="label">LEVEL 等级</div>
+            <div class="value mono">0</div>
+          </div>
+          <div class="card">
+            <div class="label">LINES 消行</div>
+            <div class="value mono">0</div>
+          </div>
+        </div>
+
+        <div class="layout-original">
+          <div class="card playfield"></div>
+          <div style="display:grid; gap:12px; grid-template-rows: 1fr auto 1fr;">
+            <div class="card next">
+              <div class="label">NEXT 下一块</div>
+            </div>
+            <div class="card kbd">
+              <div class="label">键盘控制（中文提示）</div>
+              <ul style="padding-left:0; margin:6px 0 0;">
+                <li>Enter：开始游戏</li>
+                <li>← →：移动</li>
+                <li>↓：软降</li>
+                <li>Q / W：旋转</li>
+                <li>Space：开始/暂停</li>
+                <li>R：重开</li>
+                <li>M：音乐切换</li>
+                <li>D：硬降</li>
+              </ul>
+            </div>
+            <div class="card highscores">
+              <div class="label">高分榜（示例数据）</div>
+              <table class="table">
+                <thead>
+                  <tr><th>RANK</th><th>SCORE</th><th>LEVEL</th><th>LINES</th><th>TIME</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>234599</td><td>9</td><td>94</td><td>8:47</td></tr>
+                  <tr><td>2</td><td>121650</td><td>8</td><td>87</td><td>8:11</td></tr>
+                  <tr><td>3</td><td>010961</td><td>2</td><td>27</td><td>2:26</td></tr>
+                  <tr><td>4</td><td>007166</td><td>2</td><td>28</td><td>4:00</td></tr>
+                  <tr><td>5</td><td>007140</td><td>2</td><td>25</td><td>3:43</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn">START 开始</button>
+          <button class="btn">NEW 新游戏</button>
+        </div>
+      </section>
+
+      <!-- 我理解的 Classic 三栏布局 -->
+      <section class="frame mine" aria-label="我的理解">
+        <h3>我的理解版本（Classic 三栏）</h3>
+        <div class="sub">中：游戏区；左：当前会话；右：世界排行；底：全局操作与状态。</div>
+
+        <div class="topbar">
+          <div>标题：<strong style="color:var(--accent)">TETRIS WORLD</strong></div>
+          <div class="note">系统时间 18:35:40 · 在线</div>
+        </div>
+
+        <div class="layout-mine">
+          <aside class="session" style="display:grid; gap:10px; align-content:start;">
+            <div class="card"><div class="label">当前会话</div></div>
+            <div class="row">
+              <div class="kv"><div class="k">分数</div><div class="v mono">00145230</div></div>
+              <div class="kv"><div class="k">连击倍率</div><div class="v mono danger">x4</div></div>
+            </div>
+            <div class="row">
+              <div class="kv"><div class="k">等级</div><div class="v mono">12</div></div>
+              <div class="kv"><div class="k">消行</div><div class="v mono">89</div></div>
+            </div>
+            <div class="row">
+              <div class="kv"><div class="k">用时</div><div class="v mono">08:42</div></div>
+              <div class="kv"><div class="k">下一个</div><div class="v mono">▮▮▮▮</div></div>
+            </div>
+            <div class="row">
+              <div class="kv"><div class="k">Lines/Min</div><div class="v mono">12.5</div></div>
+              <div class="kv"><div class="k">效率</div><div class="v mono">87%</div></div>
+            </div>
+          </aside>
+
+          <main class="game-area">
+            <div class="hint">
+              <h4>游戏区</h4>
+              <div>按空格开始 · 键盘 / 手柄自适应提示</div>
+              <div class="note" style="margin-top:6px;">动效与刷新不会阻塞游戏主循环</div>
+            </div>
+          </main>
+
+          <aside class="rank">
+            <div class="card">
+              <div class="head">
+                <div>世界排行（每 5 秒更新）</div>
+                <button class="btn" style="padding:4px 8px">隐藏</button>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr><th>#</th><th>SCORE</th><th>LV</th><th>LNS</th><th>TIME</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>243,764</td><td>81</td><td>81</td><td>6:37</td></tr>
+                  <tr><td>2</td><td>191,590</td><td>74</td><td>74</td><td>8:12</td></tr>
+                  <tr><td>3</td><td>121,850</td><td>47</td><td>47</td><td>5:21</td></tr>
+                  <tr><td>4</td><td>108,961</td><td>27</td><td>27</td><td>2:26</td></tr>
+                </tbody>
+              </table>
+              <div class="muted" style="margin-top:6px;">在线 2,847 · 今日局数 15,432</div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="bottombar">
+          <div class="controls">
+            <button class="btn">新游戏</button>
+            <button class="btn">继续</button>
+            <button class="btn">选项</button>
+          </div>
+          <div class="note mono">FPS: 60 · PING: 12ms · ESC 打开菜单</div>
+          <button class="btn">退出</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // 简单视图切换：并排/只看左/只看右
+    (function(){
+      const app = document.getElementById('app');
+      const grid = document.getElementById('grid');
+      const buttons = document.querySelectorAll('.controls .btn[data-view]');
+      const toSingle = (index) => {
+        // 0: 左, 1: 右
+        const nodes = grid.children;
+        for (let i = 0; i < nodes.length; i++) {
+          nodes[i].style.display = (index === -1 || index === i) ? 'block' : 'none';
+        }
+        app.classList.toggle('is-single', index !== -1);
+      };
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = btn.getAttribute('data-view');
+          if (v === 'dual') toSingle(-1);
+          if (v === 'left') toSingle(0);
+          if (v === 'right') toSingle(1);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+
+

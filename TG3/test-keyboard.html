@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Keyboard Controls Test</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: #0f380f; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .test-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+        }
+        .control-section {
+            border: 2px solid #00ff00;
+            padding: 20px;
+            background: #1a4a1a;
+        }
+        .key-state {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 4px 0;
+            border: 1px solid #306230;
+            background: #0f380f;
+        }
+        .key-state.active {
+            background: #4a6a4a;
+            border-color: #8bac0f;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .instructions {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #8bac0f;
+            background: #1a4a1a;
+        }
+        .key-combo {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .legend {
+            font-size: 12px;
+            color: #8bac0f;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 键盘控制测试 - 方案A现代竞技标准</h1>
+    
+    <div class="instructions">
+        <h3>📋 测试说明</h3>
+        <p>按下键盘上的任意键，观察右侧状态变化。绿色高亮表示按键被检测到。</p>
+        <p class="legend">
+            <strong>主要键位:</strong> 
+            <span class="key-combo">A/D</span> 移动, 
+            <span class="key-combo">Q/E</span> 旋转, 
+            <span class="key-combo">S</span> 软降, 
+            <span class="key-combo">Space</span> 硬降, 
+            <span class="key-combo">P</span> 暂停<br>
+            <strong>兼容键位:</strong> 方向键仍然可用作备选
+        </p>
+    </div>
+    
+    <div class="test-container">
+        <div class="control-section">
+            <h3>🎯 主要控制 (显示在游戏中)</h3>
+            <div class="key-state" id="move-left">
+                <span>A - 向左移动</span>
+                <span id="left-status">●</span>
+            </div>
+            <div class="key-state" id="move-right">
+                <span>D - 向右移动</span>
+                <span id="right-status">●</span>
+            </div>
+            <div class="key-state" id="rotate-ccw">
+                <span>Q - 逆时针旋转</span>
+                <span id="rotateCCW-status">●</span>
+            </div>
+            <div class="key-state" id="rotate-cw">
+                <span>E - 顺时针旋转</span>
+                <span id="rotateCW-status">●</span>
+            </div>
+            <div class="key-state" id="soft-drop">
+                <span>S - 软降</span>
+                <span id="down-status">●</span>
+            </div>
+            <div class="key-state" id="hard-drop">
+                <span>Space - 硬降</span>
+                <span id="hardDrop-status">●</span>
+            </div>
+            <div class="key-state" id="pause">
+                <span>P - 暂停</span>
+                <span id="pause-status">●</span>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h3>🔄 兼容控制 (备选键位)</h3>
+            <div class="key-state" id="arrow-left">
+                <span>← - 向左移动</span>
+                <span id="arrow-left-status">●</span>
+            </div>
+            <div class="key-state" id="arrow-right">
+                <span>→ - 向右移动</span>
+                <span id="arrow-right-status">●</span>
+            </div>
+            <div class="key-state" id="arrow-down">
+                <span>↓ - 软降</span>
+                <span id="arrow-down-status">●</span>
+            </div>
+            <div class="key-state" id="arrow-up">
+                <span>↑ - 顺时针旋转</span>
+                <span id="arrow-up-status">●</span>
+            </div>
+            <div class="key-state" id="escape">
+                <span>Esc - 暂停</span>
+                <span id="escape-status">●</span>
+            </div>
+            
+            <h3 style="margin-top: 20px;">⚙️ 额外功能</h3>
+            <div class="key-state" id="reset">
+                <span>R - 重置</span>
+                <span id="reset-status">●</span>
+            </div>
+            <div class="key-state" id="music">
+                <span>M - 音乐切换</span>
+                <span id="musicToggle-status">●</span>
+            </div>
+        </div>
+    </div>
+    
+    <script src="src/js/input/keyboard_controller.js"></script>
+    <script>
+        // 创建键盘控制器实例
+        const keyboard = new KeyboardController();
+        
+        // 状态映射
+        const statusMap = {
+            'left': ['left-status', 'arrow-left-status'],
+            'right': ['right-status', 'arrow-right-status'],
+            'down': ['down-status', 'arrow-down-status'],
+            'rotateCCW': ['rotateCCW-status'],
+            'rotateCW': ['rotateCW-status', 'arrow-up-status'],
+            'pause': ['pause-status', 'escape-status'],
+            'hardDrop': ['hardDrop-status'],
+            'reset': ['reset-status'],
+            'musicToggle': ['musicToggle-status']
+        };
+        
+        // 元素映射
+        const elementMap = {
+            'left': ['move-left', 'arrow-left'],
+            'right': ['move-right', 'arrow-right'],
+            'down': ['soft-drop', 'arrow-down'],
+            'rotateCCW': ['rotate-ccw'],
+            'rotateCW': ['rotate-cw', 'arrow-up'],
+            'pause': ['pause', 'escape'],
+            'hardDrop': ['hard-drop'],
+            'reset': ['reset'],
+            'musicToggle': ['music']
+        };
+        
+        // 实时更新状态显示
+        function updateDisplay() {
+            const state = keyboard.getState();
+            
+            Object.keys(statusMap).forEach(key => {
+                const isActive = state[key];
+                const statusIds = statusMap[key];
+                const elementIds = elementMap[key];
+                
+                // 更新状态指示器
+                statusIds.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = isActive ? '🟢' : '●';
+                    }
+                });
+                
+                // 更新元素样式
+                elementIds.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.classList.toggle('active', isActive);
+                    }
+                });
+            });
+            
+            requestAnimationFrame(updateDisplay);
+        }
+        
+        // 开始更新循环
+        updateDisplay();
+        
+        // 添加键盘事件监听器
+        let keyPressCount = 0;
+        document.addEventListener('keydown', (e) => {
+            keyPressCount++;
+            console.log(`键位测试 #${keyPressCount}: ${e.code} (${e.key})`);
+        });
+        
+        // 显示实时状态
+        const statusDiv = document.createElement('div');
+        statusDiv.style.cssText = `
+            position: fixed; top: 10px; right: 10px; 
+            background: rgba(15, 56, 15, 0.9); 
+            padding: 10px; border: 1px solid #00ff00;
+            font-size: 12px; max-width: 200px;
+        `;
+        statusDiv.innerHTML = '<strong>实时状态:</strong><div id="real-time-status"></div>';
+        document.body.appendChild(statusDiv);
+        
+        function updateRealTimeStatus() {
+            const state = keyboard.getState();
+            const activeKeys = Object.keys(state).filter(key => state[key]);
+            document.getElementById('real-time-status').innerHTML = 
+                activeKeys.length > 0 ? activeKeys.join(', ') : '无按键';
+            requestAnimationFrame(updateRealTimeStatus);
+        }
+        updateRealTimeStatus();
+    </script>
+</body>
+</html>

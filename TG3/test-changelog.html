@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Changelog Test</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: #0f380f; 
+            color: #00ff00; 
+            padding: 20px; 
+        }
+        .test-btn { 
+            background: #00ff00; 
+            color: #0f380f; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 10px; 
+            cursor: pointer; 
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Changelog System Test</h1>
+    
+    <button class="test-btn" onclick="testChangelogLoad()">Load Changelog</button>
+    <button class="test-btn" onclick="testVersionModal()">Show Version Modal</button>
+    <button class="test-btn" onclick="testMarkdownParsing()">Test Parsing</button>
+    
+    <div id="results" style="margin-top: 20px; padding: 15px; border: 1px solid #00ff00;"></div>
+    
+    <script src="src/js/changelog.js"></script>
+    <script>
+        async function testChangelogLoad() {
+            const results = document.getElementById('results');
+            results.innerHTML = '🔄 Loading changelog...';
+            
+            try {
+                const changelog = await window.changelogManager.loadChangelog();
+                if (changelog && changelog.length > 0) {
+                    results.innerHTML = `
+                        <h3>✅ Changelog loaded successfully!</h3>
+                        <p>Found ${changelog.length} versions</p>
+                        <pre>${JSON.stringify(changelog[0], null, 2)}</pre>
+                    `;
+                } else {
+                    results.innerHTML = '❌ No changelog data found';
+                }
+            } catch (error) {
+                results.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function testVersionModal() {
+            try {
+                await window.changelogManager.showVersionModal();
+            } catch (error) {
+                document.getElementById('results').innerHTML = `❌ Modal Error: ${error.message}`;
+            }
+        }
+        
+        async function testMarkdownParsing() {
+            const results = document.getElementById('results');
+            results.innerHTML = '🧪 Testing Markdown parsing...';
+            
+            const testMd = `# Test Changelog
+
+## v3.1.0 "Test Version" - 2025-08-18
+
+### 🆕 主要新功能
+
+- **测试功能1**  
+  这是测试功能1的描述
+
+- **测试功能2**  
+  这是测试功能2的描述
+
+### 🔧 优化改进
+
+- 优化测试项目1
+- 优化测试项目2
+`;
+            
+            const parsed = window.changelogManager.parseMarkdown(testMd);
+            results.innerHTML = `
+                <h3>📊 Parsing Results:</h3>
+                <pre>${JSON.stringify(parsed, null, 2)}</pre>
+            `;
+        }
+    </script>
+</body>
+</html>
