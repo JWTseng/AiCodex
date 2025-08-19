@@ -150,105 +150,6 @@
             box-shadow: 0 0 10px rgba(139, 172, 15, 0.5);
         }
         
-        /* 模式指示器 */
-        .mode-indicator {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 8px;
-        }
-        
-        .mode-retro {
-            background: #8bac0f;
-            color: #0f380f;
-        }
-        
-        .mode-modern {
-            background: #8bac0f;
-            color: #0f380f;
-        }
-        
-        /* 模式切换开关容器 */
-        .mode-switch-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            height: 40px;
-        }
-        
-        /* 外部标签 */
-        .mode-label-left, .mode-label-right {
-            color: var(--nes-yellow);
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 1px 1px 0px var(--nes-black);
-            min-width: 60px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            line-height: 1;
-        }
-        
-        .mode-label-left {
-            justify-content: flex-end;
-        }
-        
-        .mode-label-right {
-            justify-content: flex-start;
-        }
-        
-        /* 模式切换开关 - 拉长版本 */
-        .mode-switch {
-            position: relative;
-            display: inline-block;
-            width: 200px;
-            height: 32px;
-        }
-        
-        .mode-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .mode-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--nes-light-green);
-            transition: 0.3s;
-            border: 2px solid var(--nes-light-green);
-            border-radius: 4px;
-        }
-        
-        .mode-slider:before {
-            position: absolute;
-            content: "";
-            height: 24px;
-            width: 94px;
-            left: 2px;
-            bottom: 2px;
-            background-color: var(--nes-black);
-            transition: 0.3s;
-            border-radius: 2px;
-            border: 1px solid var(--nes-gray);
-        }
-        
-        .mode-switch input:checked + .mode-slider {
-            background-color: #8bac0f;
-            border-color: #8bac0f;
-        }
-        
-        .mode-switch input:checked + .mode-slider:before {
-            transform: translateX(98px);
-        }
         
         @media (max-width: 768px) {
             .setting-item {
@@ -281,32 +182,8 @@
                 font-size: 12px;
             }
             
-            .mode-label-left, .mode-label-right {
-                font-size: 12px;
-                min-width: 50px;
-                height: 36px;
-            }
-            
-            .mode-switch-container {
-                height: 36px;
-            }
-            
             .setting-label {
                 height: 36px;
-            }
-            
-            .mode-switch {
-                width: 160px;
-                height: 28px;
-            }
-            
-            .mode-slider:before {
-                height: 20px;
-                width: 74px;
-            }
-            
-            .mode-switch input:checked + .mode-slider:before {
-                transform: translateX(78px);
             }
         }
         
@@ -507,21 +384,6 @@
                         </div>
                     </div>
                     
-                    <div class="setting-item player-name-item">
-                        <div class="setting-label">
-                            <div class="setting-title">GAME MODE</div>
-                        </div>
-                        <div class="setting-control">
-                            <div class="mode-switch-container">
-                                <span class="mode-label-left">RETRO</span>
-                                <label class="mode-switch">
-                                    <input type="checkbox" id="gameModeSwitch">
-                                    <span class="mode-slider"></span>
-                                </label>
-                                <span class="mode-label-right">MODERN</span>
-                            </div>
-                        </div>
-                    </div>
 
                 </div>
                 

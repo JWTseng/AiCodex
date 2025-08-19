@@ -62,9 +62,9 @@ export const CURRENT_VERSION: VersionInfo = {
       type: 'new'
     },
     {
-      title: '复古/现代模式切换',
-      description: '可选择NES经典随机或7-Bag现代随机，设置页面可切换',
-      type: 'new'
+      title: '经典复古体验',
+      description: '默认采用经典NES随机算法，保持原汁原味的俄罗斯方块体验',
+      type: 'improved'
     },
     {
       title: '测试工具集',
@@ -108,7 +108,7 @@ export const CURRENT_VERSION: VersionInfo = {
     '增强玩家名称管理和Top50状态显示',
     '完善多语言本地化支持',
     '添加实时延迟监控和性能优化',
-    '设置界面优化，支持游戏模式切换',
+    '设置界面简化，专注于玩家名称管理',
     '代码质量提升，模块化架构便于维护'
   ],
   bugFixes: [

@@ -29,7 +29,7 @@ class PlayerNameManager {
     bindEvents() {
         // 设置按钮事件
         document.getElementById('settingsBtn').addEventListener('click', () => {
-            this.showNameModal();
+            this.showGameSettings();
         });
         
         // 弹窗事件
@@ -57,6 +57,33 @@ class PlayerNameManager {
         document.getElementById('playerNameModal').addEventListener('click', (e) => {
             if (e.target.id === 'playerNameModal') {
                 this.closeModal();
+            }
+        });
+        
+        // 游戏设置界面事件
+        document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+            this.closeGameSettings();
+        });
+        
+        
+        document.getElementById('updateNameBtn').addEventListener('click', () => {
+            this.updatePlayerNameFromSettings();
+        });
+        
+        // 设置页面的名字输入框事件
+        document.getElementById('settingsPlayerNameInput').addEventListener('input', (e) => {
+            this.validateSettingsName(e.target.value);
+        });
+        
+        document.getElementById('settingsPlayerNameInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.updatePlayerNameFromSettings();
+            }
+        });
+        
+        document.getElementById('gameSettingsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'gameSettingsModal') {
+                this.closeGameSettings();
             }
         });
     }
@@ -358,6 +385,92 @@ class PlayerNameManager {
     getPlayerId() {
         return this.playerId || this.getStoredValue('playerId');
     }
+    
+    // ===== 游戏设置界面管理 =====
+    showGameSettings() {
+        const modal = document.getElementById('gameSettingsModal');
+        const nameInput = document.getElementById('settingsPlayerNameInput');
+        
+        // 预填当前玩家名称（大写）
+        if (nameInput) {
+            nameInput.value = (this.playerName || '').toUpperCase();
+        }
+        
+        modal.style.display = 'flex';
+        
+        // 添加ESC键关闭
+        this.settingsKeyHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeGameSettings();
+            }
+        };
+        document.addEventListener('keydown', this.settingsKeyHandler);
+    }
+    
+    closeGameSettings() {
+        const modal = document.getElementById('gameSettingsModal');
+        modal.style.display = 'none';
+        
+        // 移除ESC键监听
+        if (this.settingsKeyHandler) {
+            document.removeEventListener('keydown', this.settingsKeyHandler);
+            this.settingsKeyHandler = null;
+        }
+    }
+    
+    
+
+    
+    validateSettingsName(name) {
+        const input = document.getElementById('settingsPlayerNameInput');
+        
+        // 实时清理和转换
+        const cleanedName = this.cleanName(name);
+        if (cleanedName !== name) {
+            input.value = cleanedName;
+        }
+        
+        // 验证逻辑
+        return this.validateName(cleanedName);
+    }
+    
+    updatePlayerNameFromSettings() {
+        const input = document.getElementById('settingsPlayerNameInput');
+        const name = input.value.trim();
+        
+        if (!name) {
+            alert('PLEASE ENTER A VALID PLAYER NAME');
+            return;
+        }
+        
+        if (this.validateName(name)) {
+            const cleanedName = this.cleanName(name);
+            this.savePlayerName(cleanedName);
+            
+            // 更新输入框显示
+            input.value = cleanedName;
+            
+            // 显示更新成功通知
+            this.showUpdateNotification('PLAYER NAME UPDATED');
+        }
+    }
+    
+    showUpdateNotification(message) {
+        const updateBtn = document.getElementById('updateNameBtn');
+        const originalText = updateBtn.textContent;
+        
+        updateBtn.textContent = '✓ 已更新';
+        updateBtn.style.background = '#8bac0f';
+        updateBtn.style.color = '#0f380f';
+        
+        setTimeout(() => {
+            updateBtn.textContent = originalText;
+            updateBtn.style.background = '';
+            updateBtn.style.color = '';
+        }, 2000);
+    }
+    
+
 }
 
 // 创建全局实例
