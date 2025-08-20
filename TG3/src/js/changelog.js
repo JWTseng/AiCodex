@@ -13,15 +13,25 @@ class ChangelogManager {
      */
     async loadChangelog() {
         try {
+            console.log('🔄 开始加载 CHANGELOG.md...');
             const response = await fetch('./CHANGELOG.md');
+            console.log('📥 Fetch响应:', response.status, response.statusText);
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
+            
             const text = await response.text();
+            console.log('📄 读取到文本长度:', text.length);
+            console.log('📄 前100字符:', text.substring(0, 100));
+            
             this.changelogData = this.parseMarkdown(text);
+            console.log('✅ 解析完成，版本数量:', this.changelogData ? this.changelogData.length : 0);
+            
             return this.changelogData;
         } catch (error) {
-            console.error('Failed to load changelog:', error);
+            console.error('❌ 加载changelog失败:', error);
+            console.error('错误详情:', error.message);
             return null;
         }
     }
@@ -211,13 +221,21 @@ class ChangelogManager {
      * 显示版本信息弹窗
      */
     async showVersionModal() {
+        console.log('🚀 开始显示版本弹窗...');
+        
         const versions = await this.loadChangelog();
+        console.log('📦 获取到的版本数据:', versions);
+        
         if (!versions || versions.length === 0) {
-            console.error('No changelog data available');
+            console.error('❌ 没有changelog数据可用');
+            // 显示一个错误提示弹窗
+            alert('无法加载更新日志，请检查网络连接或稍后重试。');
             return;
         }
 
         const currentVersion = versions[0]; // 获取最新版本
+        console.log('🎯 当前版本数据:', currentVersion);
+        
         const modalHTML = this.renderVersion(currentVersion);
 
         const modal = document.createElement('div');
@@ -258,4 +276,17 @@ class ChangelogManager {
 }
 
 // 全局实例
+console.log('🔧 正在初始化 ChangelogManager...');
 window.changelogManager = new ChangelogManager();
+console.log('✅ ChangelogManager 初始化完成:', window.changelogManager);
+
+// 测试函数 - 在控制台直接调用测试
+window.testChangelog = function() {
+    console.log('🧪 测试 changelog 功能...');
+    if (window.changelogManager) {
+        console.log('✅ changelogManager 可用');
+        window.changelogManager.showVersionModal();
+    } else {
+        console.error('❌ changelogManager 不可用');
+    }
+};
