@@ -146,6 +146,8 @@ class TetrisWorldLeaderboard {
             const newSignature = this.computeSignature(scores);
             if (newSignature !== this.lastSignature) {
                 this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(scores) : scores;
+                // 始终只显示前50条，避免去重后数量逐日减少导致“变短”感知
+                this.worldScores = Array.isArray(this.worldScores) ? this.worldScores.slice(0, 50) : [];
                 this.renderLeaderboard();
                 this.lastSignature = newSignature;
             }
@@ -183,7 +185,8 @@ class TetrisWorldLeaderboard {
             
             console.log('TetrisWorldLeaderboard: 正在从Google Apps Script获取数据...');
             
-            const response = await fetch(`${API_URL}?action=get_scores&limit=50`, {
+            // 适配客户端去重：提高拉取上限，保证去重后仍可显示Top50
+            const response = await fetch(`${API_URL}?action=get_scores&limit=200`, {
                 method: 'GET',
                 mode: 'cors'
             });
