@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API端点测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f380f;
+            color: #8bac0f;
+        }
+        
+        .test-section {
+            border: 1px solid #306230;
+            margin: 20px 0;
+            padding: 15px;
+        }
+        
+        .test-result {
+            background: #306230;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .success { background: #8bac0f; color: #0f380f; }
+        .error { background: #ff6b6b; color: #fff; }
+        
+        button {
+            background: #8bac0f;
+            color: #0f380f;
+            border: none;
+            padding: 10px 20px;
+            font-family: monospace;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #306230;
+            color: #8bac0f;
+        }
+        
+        .endpoint-info {
+            font-size: 12px;
+            margin: 5px 0;
+            color: #9bbc0f;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 TG3 API端点测试工具</h1>
+    
+    <div class="test-section">
+        <h2>主API端点 (v2.0.0 修复版本)</h2>
+        <div class="endpoint-info">https://script.google.com/macros/s/AKfycbw2Q2cRwKgBsT2itkqEhWPYv-bZ-IEWhoEkQ8Oua5xwGrmjC2F34RAe3Gt2xDJ1cck/exec</div>
+        <button onclick="testEndpoint1()">测试API端点</button>
+        <div id="result1" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>综合测试: 前端榜单逻辑</h2>
+        <button onclick="testLeaderboardLogic()">测试榜单逻辑</button>
+        <div id="result2" class="test-result"></div>
+    </div>
+
+    <script>
+        const API_ENDPOINTS = [
+            'https://script.google.com/macros/s/AKfycbxfQhUhw7A6vhlvUIoDTcJW5H1vqAz1kxmaZIBJIG9HSpWMYpkq_qWsgpwEPNwpqQ/exec',
+            'https://script.google.com/macros/s/AKfycbw2Q2cRwKgBsT2itkqEhWPYv-bZ-IEWhoEkQ8Oua5xwGrmjC2F34RAe3Gt2xDJ1cck/exec'
+        ];
+
+        async function testEndpoint(endpointIndex) {
+            const resultDiv = document.getElementById(`result${endpointIndex + 1}`);
+            const endpoint = API_ENDPOINTS[endpointIndex];
+            
+            resultDiv.innerHTML = '🔄 测试中...';
+            
+            try {
+                // 首先测试版本
+                console.log(`测试端点 ${endpointIndex + 1} 版本:`, endpoint);
+                const versionResponse = await fetch(`${endpoint}?test=version`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                let versionInfo = '';
+                if (versionResponse.ok) {
+                    const versionData = await versionResponse.json();
+                    versionInfo = `版本: ${versionData.version || 'unknown'}\n时间: ${versionData.timestamp || 'unknown'}\n\n`;
+                } else {
+                    versionInfo = `版本检查失败: HTTP ${versionResponse.status}\n\n`;
+                }
+                
+                // 测试获取数据
+                console.log(`测试端点 ${endpointIndex + 1} 数据:`, endpoint);
+                const dataResponse = await fetch(`${endpoint}?action=get_scores&limit=100`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!dataResponse.ok) {
+                    throw new Error(`HTTP ${dataResponse.status}`);
+                }
+                
+                const data = await dataResponse.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `❌ 端点 ${endpointIndex + 1} 错误:\n${versionInfo}错误: ${data.error}`;
+                    resultDiv.className = 'test-result error';
+                    return;
+                }
+                
+                if (data.scores && Array.isArray(data.scores)) {
+                    const uniquePlayers = [...new Set(data.scores.map(s => s.player_name.toLowerCase()))];
+                    const summary = `✅ 端点 ${endpointIndex + 1} 成功:\n${versionInfo}总记录: ${data.scores.length}\n独特玩家: ${uniquePlayers.length}\n玩家列表: ${uniquePlayers.slice(0, 10).join(', ')}${uniquePlayers.length > 10 ? '...' : ''}\n\n前5条记录详细信息:\n${data.scores.slice(0, 5).map((s, i) => `${i+1}. ${s.player_name}:\n   Score: ${s.score}\n   Level: ${s.level}\n   Lines: ${s.lines}\n   Duration: ${s.duration_ms}ms`).join('\n\n')}`;
+                    
+                    resultDiv.innerHTML = summary;
+                    resultDiv.className = 'test-result success';
+                } else {
+                    resultDiv.innerHTML = `⚠️ 端点 ${endpointIndex + 1} 数据格式异常:\n${versionInfo}${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'test-result error';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ 端点 ${endpointIndex + 1} 请求失败:\n错误: ${error.message}\n端点: ${endpoint}`;
+                resultDiv.className = 'test-result error';
+            }
+        }
+        
+        function testEndpoint1() {
+            testEndpoint(0);
+        }
+        
+        async function testLeaderboardLogic() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.innerHTML = '🔄 测试前端榜单逻辑...';
+            
+            try {
+                // 尝试所有端点，找到能工作的
+                let workingData = null;
+                let workingEndpoint = '';
+                
+                for (let i = 0; i < API_ENDPOINTS.length; i++) {
+                    try {
+                        const response = await fetch(`${API_ENDPOINTS[i]}?action=get_scores&limit=200`, {
+                            method: 'GET',
+                            mode: 'cors'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.scores && Array.isArray(data.scores) && !data.error) {
+                                workingData = data.scores;
+                                workingEndpoint = `端点 ${i + 1}`;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (!workingData) {
+                    resultDiv.innerHTML = '❌ 所有API端点都无法获取有效数据';
+                    resultDiv.className = 'test-result error';
+                    return;
+                }
+                
+                // 模拟前端去重逻辑
+                const scores = workingData.map(score => ({
+                    name: score.player_name,
+                    score: score.score,
+                    level: score.level,
+                    lines: score.lines,
+                    duration: score.duration_ms
+                }));
+                
+                // 去重逻辑（简化版）
+                const playerMap = new Map();
+                scores.forEach(score => {
+                    const normalizedName = score.name.toLowerCase();
+                    const existing = playerMap.get(normalizedName);
+                    
+                    if (!existing || 
+                        score.score > existing.score || 
+                        (score.score === existing.score && score.level > existing.level)) {
+                        playerMap.set(normalizedName, score);
+                    }
+                });
+                
+                const deduplicatedScores = Array.from(playerMap.values())
+                    .sort((a, b) => {
+                        if (b.score !== a.score) return b.score - a.score;
+                        if (b.level !== a.level) return b.level - a.level;
+                        return 0;
+                    })
+                    .slice(0, 50);
+                
+                const summary = `✅ 前端榜单逻辑测试成功:\n数据源: ${workingEndpoint}\n原始记录: ${scores.length}\n去重后记录: ${deduplicatedScores.length}\n\n前10名玩家:\n${deduplicatedScores.slice(0, 10).map((s, i) => `${i+1}. ${s.name}: ${s.score} (Level ${s.level})`).join('\n')}`;
+                
+                resultDiv.innerHTML = summary;
+                resultDiv.className = 'test-result success';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ 前端榜单逻辑测试失败:\n错误: ${error.message}`;
+                resultDiv.className = 'test-result error';
+            }
+        }
+        
+        // 页面加载后自动测试
+        window.addEventListener('load', function() {
+            console.log('🔍 API端点测试工具加载完成');
+            console.log('点击按钮开始测试各个端点');
+        });
+    </script>
+</body>
+</html>

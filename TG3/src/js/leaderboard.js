@@ -12,8 +12,23 @@ class TetrisWorldLeaderboard {
         this.serverTimeBaseMs = null; // 服务器时间基准（毫秒，UTC）
         this.serverTimeStartLocalMs = null; // 本地开始计时的时间（毫秒）
         
-        // 去重功能设置
-        this.deduplicationEnabled = localStorage.getItem('leaderboard-deduplication') !== 'false';
+        // 去重功能设置（默认开启；支持用户显式控制）
+        // 允许通过 URL 参数 ?dedup=1/0 临时控制
+        try {
+            const url = new URL(window.location.href);
+            const param = url.searchParams.get('dedup');
+            if (param === '1') {
+                this.deduplicationEnabled = true;
+            } else if (param === '0') {
+                this.deduplicationEnabled = false;
+            } else {
+                // 默认开启去重功能
+                this.deduplicationEnabled = true;
+            }
+        } catch (_) {
+            // 默认开启去重功能
+            this.deduplicationEnabled = true;
+        }
         
         this.init();
     }
@@ -145,8 +160,11 @@ class TetrisWorldLeaderboard {
             this.updateServerTime();
             const newSignature = this.computeSignature(scores);
             if (newSignature !== this.lastSignature) {
-                this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(scores) : scores;
-                // 始终只显示前50条，避免去重后数量逐日减少导致“变短”感知
+                // 明确排序，防止服务端偶发未排序
+                const sorted = Array.isArray(scores) ? [...scores].sort((a, b) => b.score - a.score) : [];
+                this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(sorted) : sorted;
+                
+                // 始终只显示前50条，避免去重后数量逐日减少导致"变短"感知
                 this.worldScores = Array.isArray(this.worldScores) ? this.worldScores.slice(0, 50) : [];
                 this.renderLeaderboard();
                 this.lastSignature = newSignature;
@@ -181,37 +199,70 @@ class TetrisWorldLeaderboard {
                 }
             } catch (_) {}
             // Google Apps Script API URL
-            const API_URL = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
+            const API_ENDPOINTS = [
+                // 主端点 (v2.1.0 - 数据迁移后版本)
+                'https://script.google.com/macros/s/AKfycbxfQhUhw7A6vhlvUIoDTcJW5H1vqAz1kxmaZIBJIG9HSpWMYpkq_qWsgpwEPNwpqQ/exec',
+                // 备用端点 (v2.0.0 - 修复版本)
+                'https://script.google.com/macros/s/AKfycbw2Q2cRwKgBsT2itkqEhWPYv-bZ-IEWhoEkQ8Oua5xwGrmjC2F34RAe3Gt2xDJ1cck/exec'
+            ];
+            
+            const API_URL = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : API_ENDPOINTS[0];
             
             console.log('TetrisWorldLeaderboard: 正在从Google Apps Script获取数据...');
+            console.log('🔗 使用API端点:', API_URL);
             
-            // 适配客户端去重：提高拉取上限，保证去重后仍可显示Top50
-            const response = await fetch(`${API_URL}?action=get_scores&limit=200`, {
-                method: 'GET',
-                mode: 'cors'
-            });
+            let response = null;
+            let lastError = null;
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // 尝试所有可用的API端点
+            for (let i = 0; i < API_ENDPOINTS.length; i++) {
+                const endpoint = API_ENDPOINTS[i];
+                try {
+                    console.log(`🔄 尝试端点 ${i + 1}/${API_ENDPOINTS.length}:`, endpoint);
+                    response = await fetch(`${endpoint}?action=get_scores&limit=200`, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log(`✅ 端点 ${i + 1} 响应成功:`, data);
+                    
+                    if (data.error) {
+                        console.warn(`⚠️ 端点 ${i + 1} 返回错误:`, data.error);
+                        lastError = new Error(data.error);
+                        continue; // 尝试下一个端点
+                    }
+                    
+                    if (data.scores && Array.isArray(data.scores)) {
+                        const scores = data.scores.map(score => ({
+                            name: score.player_name,
+                            score: score.score,
+                            level: score.level,
+                            lines: score.lines,
+                            duration: score.duration_ms
+                        }));
+                        
+                        console.log('🎯 TetrisWorldLeaderboard: 从Google Apps Script获取到数据:', scores.length, '条记录');
+                        console.log('👥 独特玩家数量:', [...new Set(scores.map(s => s.name.toLowerCase()))].length);
+                        return scores;
+                    } else {
+                        console.warn(`⚠️ 端点 ${i + 1} 数据格式错误:`, data);
+                        lastError = new Error('Invalid data format');
+                        continue; // 尝试下一个端点
+                    }
+                } catch (error) {
+                    console.error(`❌ 端点 ${i + 1} 请求失败:`, error);
+                    lastError = error;
+                    continue; // 尝试下一个端点
+                }
             }
             
-            const data = await response.json();
-            
-            if (data.scores && Array.isArray(data.scores)) {
-                const scores = data.scores.map(score => ({
-                    name: score.player_name,
-                    score: score.score,
-                    level: score.level,
-                    lines: score.lines,
-                    duration: score.duration_ms
-                }));
-                
-                console.log('TetrisWorldLeaderboard: 从Google Apps Script获取到数据:', scores);
-                return scores;
-            } else {
-                console.warn('TetrisWorldLeaderboard: API返回数据格式错误:', data);
-                return [];
-            }
+            // 所有端点都失败了
+            throw lastError || new Error('所有API端点都无法访问');
             
         } catch (error) {
             console.error('TetrisWorldLeaderboard: 获取数据失败:', error);
@@ -463,16 +514,18 @@ class TetrisWorldLeaderboard {
                     shouldReplace = true;
                     reason = `更高分数 (${score.score} > ${existing.score})`;
                 } else if (score.score === existing.score) {
-                    // 分数相同，比较时间戳（如果有的话）
-                    if (score.timestamp && existing.timestamp) {
-                        if (new Date(score.timestamp) > new Date(existing.timestamp)) {
-                            shouldReplace = true;
-                            reason = `相同分数但更新时间 (${score.timestamp} > ${existing.timestamp})`;
-                        }
-                    } else if (index < scores.indexOf(existing)) {
-                        // 没有时间戳时，假设数组前面的记录较新
+                    // 分数相同，比较等级
+                    if (score.level > existing.level) {
                         shouldReplace = true;
-                        reason = '相同分数且位置更前';
+                        reason = `相同分数但更高等级 (${score.level} > ${existing.level})`;
+                    } else if (score.level === existing.level) {
+                        // 分数和等级都相同，比较时间戳（更新的优先）
+                        if (score.timestamp && existing.timestamp) {
+                            if (new Date(score.timestamp) > new Date(existing.timestamp)) {
+                                shouldReplace = true;
+                                reason = `相同分数等级但更新时间 (${score.timestamp} > ${existing.timestamp})`;
+                            }
+                        }
                     }
                 }
 
@@ -499,7 +552,15 @@ class TetrisWorldLeaderboard {
                 duration: score.duration,
                 timestamp: score.timestamp
             }))
-            .sort((a, b) => b.score - a.score);
+            .sort((a, b) => {
+                // 分数降序 → 等级降序 → 时间降序（最新优先）
+                if (b.score !== a.score) return b.score - a.score;
+                if (b.level !== a.level) return b.level - a.level;
+                if (a.timestamp && b.timestamp) {
+                    return new Date(b.timestamp) - new Date(a.timestamp);
+                }
+                return 0;
+            });
 
         console.log(`✅ 去重完成：${scores.length} → ${deduplicatedScores.length} (-${duplicateCount} 重复)`);
         
