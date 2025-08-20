@@ -24,6 +24,8 @@ function doGet(e) {
         return submitScore(e, headers);
       case 'get_player_rank':
         return getPlayerRank(e, headers);
+      case 'confirm_submission':
+        return confirmSubmission(e, headers);
       default:
         return createResponse({ error: 'Invalid action' }, 400, headers);
     }
@@ -67,16 +69,16 @@ function getScores(e, headers) {
     
     // 跳过标题行，获取数据
     const scores = data.slice(1)
-      .map(row => {
-        return {
-          player_name: row[0] || 'Anonymous',
-          score: parseInt(row[1]) || 0,
-          level: parseInt(row[2]) || 1,
-          lines: parseInt(row[3]) || 0,
-          duration_ms: parseInt(row[4]) || 0,
-          created_at: row[5] || new Date().toISOString()
-        };
-      })
+      .map(row => ({
+        // 列顺序与 submitScore 的 newRow 保持一致
+        // 0: player_id, 1: player_name, 2: score, 3: level, 4: lines, 5: duration_ms, 6: client_version, 7: client_nonce, 8: created_at
+        name: row[1] || 'Anonymous',          // 前端期望 name 字段，不是 player_name
+        score: parseInt(row[2]) || 0,
+        level: parseInt(row[3]) || 1,
+        lines: parseInt(row[4]) || 0,
+        duration: parseInt(row[5]) || 0,      // 前端期望 duration，不是 duration_ms
+        created_at: (row[8] || row[5] || new Date().toISOString())
+      }))
       .filter(score => score.score > 0) // 过滤有效分数
       .sort((a, b) => b.score - a.score) // 按分数降序
       .slice(0, limit); // 限制数量
@@ -114,6 +116,19 @@ function submitScore(e, headers) {
       return createResponse({ error: 'Sheet not found' }, 404, headers);
     }
     
+    // 幂等性：若相同 player_id + client_nonce 已存在则直接返回成功
+    const existing = worksheet.getDataRange().getValues().slice(1).some(row => {
+      return String(row[0]) === String(scoreData.player_id) && String(row[7]) === String(scoreData.client_nonce);
+    });
+    if (existing) {
+      return createResponse({ 
+        success: true, 
+        message: 'Already submitted',
+        score_id: scoreData.player_id,
+        dedup: true
+      }, 200, headers);
+    }
+
     // 添加新行
     const newRow = [
       scoreData.player_id,
@@ -160,7 +175,7 @@ function getPlayerRank(e, headers) {
     
     // 计算排名
     const higherScores = data.slice(1)
-      .filter(row => parseInt(row[1]) > score)
+      .filter(row => parseInt(row[2]) > score)
       .length;
     
     const rank = higherScores + 1;
@@ -172,6 +187,41 @@ function getPlayerRank(e, headers) {
     
   } catch (error) {
     return createResponse({ error: error.toString() }, 500, headers);
+  }
+}
+
+// 确认提交是否已写入（通过 player_id + client_nonce）
+function confirmSubmission(e, headers) {
+  try {
+    const playerId = e.parameter.player_id || '';
+    const clientNonce = e.parameter.client_nonce || '';
+    if (!playerId || !clientNonce) {
+      return createResponse({ exists: false, error: 'Missing player_id or client_nonce' }, 400, headers);
+    }
+    const sheet = SpreadsheetApp.openById('17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU');
+    const worksheet = sheet.getSheetByName('scores_raw');
+    if (!worksheet) {
+      return createResponse({ exists: false, error: 'Sheet not found' }, 404, headers);
+    }
+    const data = worksheet.getDataRange().getValues();
+    const found = data.slice(1).find(row => String(row[0]) === String(playerId) && String(row[7]) === String(clientNonce));
+    if (found) {
+      return createResponse({
+        exists: true,
+        player_id: found[0],
+        player_name: found[1],
+        score: parseInt(found[2]) || 0,
+        level: parseInt(found[3]) || 1,
+        lines: parseInt(found[4]) || 0,
+        duration_ms: parseInt(found[5]) || 0,
+        client_version: found[6] || '',
+        client_nonce: found[7] || '',
+        created_at: found[8] || ''
+      }, 200, headers);
+    }
+    return createResponse({ exists: false }, 200, headers);
+  } catch (error) {
+    return createResponse({ exists: false, error: error.toString() }, 500, headers);
   }
 }
 

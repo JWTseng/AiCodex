@@ -18,12 +18,32 @@ class ScoreSubmissionManager {
         // 提交状态
         this.isSubmitting = false;
         this.submissionQueue = [];
+        // 可靠上传：持久化队列 + 断网重试
+        this.persistentQueueKey = 'tw_pending_submissions_v1';
+        this.retryTimer = null;
+        this.retryBackoffMs = 5000; // 初始5s，指数回退
+        this.maxBackoffMs = 5 * 60 * 1000; // 上限5分钟
         
         this.init();
     }
     
     init() {
         console.log('ScoreSubmissionManager initialized');
+        // 恢复持久化队列
+        try {
+            const saved = localStorage.getItem(this.persistentQueueKey);
+            if (saved) {
+                const arr = JSON.parse(saved);
+                if (Array.isArray(arr)) this.submissionQueue.push(...arr);
+            }
+        } catch (_) {}
+
+        // 启动自动重试（页面激活/网络恢复后）
+        window.addEventListener('online', () => this.scheduleRetry(0));
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') this.scheduleRetry(0);
+        });
+        this.scheduleRetry(0);
     }
     
     // 生成UUID
@@ -77,6 +97,10 @@ class ScoreSubmissionManager {
     prepareSubmissionData(scoreData) {
         const playerName = window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous';
         const playerId = window.playerNameManager && window.playerNameManager.getPlayerId ? window.playerNameManager.getPlayerId() : this.generateUUID();
+        // 确保每个提交的 client_nonce 稳定（若不存在则生成一次并回写到 scoreData 上）
+        if (!scoreData.client_nonce) {
+            scoreData.client_nonce = this.generateNonce();
+        }
         return {
             player_id: playerId,
             player_name: playerName,
@@ -85,7 +109,7 @@ class ScoreSubmissionManager {
             lines: scoreData.lines,
             duration_ms: scoreData.duration,
             client_version: this.clientVersion,
-            client_nonce: this.generateNonce()
+            client_nonce: scoreData.client_nonce
         };
     }
     
@@ -103,14 +127,11 @@ class ScoreSubmissionManager {
             };
         }
         
-        // 检查是否正在提交
+        // 并发保护：若正在提交，则加入队列并持久化
         if (this.isSubmitting) {
             console.log('Submission in progress, queuing score...');
-            this.submissionQueue.push(scoreData);
-            return {
-                success: false,
-                error: 'Submission in progress, score queued'
-            };
+            this.enqueue(scoreData);
+            return { success: false, error: 'Submission in progress, score queued' };
         }
         
         this.isSubmitting = true;
@@ -127,21 +148,22 @@ class ScoreSubmissionManager {
             if (!data || data.success !== true) {
                 throw new Error('API failed');
             }
+            // 二次确认：确保已写入（避免网络中途断连导致误判）
+            const confirmed = await this.confirmSubmission(payload.player_id, payload.client_nonce);
+            if (!confirmed) {
+                throw new Error('Server confirmation failed');
+            }
             // 更新本地最高分
             this.updateLocalHighScore(scoreData);
-            // 处理队列中的其他提交
-            this.processSubmissionQueue();
+            // 成功后异步处理后续队列，避免递归调用
+            setTimeout(() => this.processSubmissionQueue(), 0);
             return { success: true, message: 'Score submitted successfully' };
         } catch (error) {
             console.error('Score submission failed:', error);
-            
-            // 处理队列中的其他提交
-            this.processSubmissionQueue();
-            
-            return {
-                success: false,
-                error: 'Submission failed: ' + error.message
-            };
+            // 失败：加入持久化队列并安排重试
+            this.enqueue(scoreData);
+            this.scheduleRetry();
+            return { success: false, error: 'Submission failed: ' + error.message };
         } finally {
             this.isSubmitting = false;
         }
@@ -151,6 +173,7 @@ class ScoreSubmissionManager {
     processSubmissionQueue() {
         if (this.submissionQueue.length > 0 && !this.isSubmitting) {
             const nextScore = this.submissionQueue.shift();
+            this.persistQueue();
             this.submitScore(nextScore);
         }
     }
@@ -161,6 +184,52 @@ class ScoreSubmissionManager {
         if (scoreData.score > currentHighScore) {
             localStorage.setItem('playerHighScore', scoreData.score);
             console.log('New high score saved:', scoreData.score);
+        }
+    }
+
+    // 队列与重试工具
+    enqueue(scoreData) {
+        this.submissionQueue.push(scoreData);
+        this.persistQueue();
+    }
+
+    persistQueue() {
+        try {
+            localStorage.setItem(this.persistentQueueKey, JSON.stringify(this.submissionQueue));
+        } catch (_) {}
+    }
+
+    scheduleRetry(delayMs) {
+        // 允许手动指定延迟，否则使用指数回退
+        const delay = typeof delayMs === 'number' ? delayMs : this.retryBackoffMs;
+        if (this.retryTimer) clearTimeout(this.retryTimer);
+        if (this.submissionQueue.length === 0) return;
+        if (navigator.onLine === false) return; // 离线时不安排
+        this.retryTimer = setTimeout(() => {
+            if (this.isSubmitting) { this.scheduleRetry(1000); return; }
+            // 尝试处理一个
+            this.processSubmissionQueue();
+            // 指数回退（若仍有剩余）
+            if (this.submissionQueue.length > 0) {
+                this.retryBackoffMs = Math.min(this.retryBackoffMs * 2, this.maxBackoffMs);
+                this.scheduleRetry();
+            } else {
+                // 清空后重置回退
+                this.retryBackoffMs = 5000;
+            }
+        }, Math.max(0, delay));
+    }
+
+    // 与服务端确认：通过 player_id + client_nonce 校验是否写入
+    async confirmSubmission(playerId, clientNonce) {
+        try {
+            const params = new URLSearchParams({ action: 'confirm_submission', player_id: playerId, client_nonce: clientNonce });
+            const resp = await fetch(`${this.apiUrl}?${params.toString()}`, { method: 'GET', mode: 'cors' });
+            if (!resp.ok) return false;
+            const data = await resp.json();
+            return !!(data && data.exists === true);
+        } catch (_) {
+            return false;
         }
     }
     
