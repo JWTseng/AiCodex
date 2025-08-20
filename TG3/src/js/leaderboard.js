@@ -12,8 +12,23 @@ class TetrisWorldLeaderboard {
         this.serverTimeBaseMs = null; // 服务器时间基准（毫秒，UTC）
         this.serverTimeStartLocalMs = null; // 本地开始计时的时间（毫秒）
         
-        // 去重功能设置
-        this.deduplicationEnabled = localStorage.getItem('leaderboard-deduplication') !== 'false';
+        // 去重功能设置（默认关闭；仅当用户显式开启时启用）
+        // 允许通过 URL 参数 ?dedup=1/0 临时控制
+        try {
+            const url = new URL(window.location.href);
+            const param = url.searchParams.get('dedup');
+            const stored = localStorage.getItem('leaderboard-deduplication');
+            if (param === '1') {
+                this.deduplicationEnabled = true;
+            } else if (param === '0') {
+                this.deduplicationEnabled = false;
+            } else {
+                this.deduplicationEnabled = stored === 'true';
+            }
+        } catch (_) {
+            const stored = localStorage.getItem('leaderboard-deduplication');
+            this.deduplicationEnabled = stored === 'true';
+        }
         
         this.init();
     }
@@ -145,7 +160,9 @@ class TetrisWorldLeaderboard {
             this.updateServerTime();
             const newSignature = this.computeSignature(scores);
             if (newSignature !== this.lastSignature) {
-                this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(scores) : scores;
+                // 明确排序，防止服务端偶发未排序
+                const sorted = Array.isArray(scores) ? [...scores].sort((a, b) => b.score - a.score) : [];
+                this.worldScores = this.deduplicationEnabled ? this.deduplicateScores(sorted) : sorted;
                 // 始终只显示前50条，避免去重后数量逐日减少导致“变短”感知
                 this.worldScores = Array.isArray(this.worldScores) ? this.worldScores.slice(0, 50) : [];
                 this.renderLeaderboard();
