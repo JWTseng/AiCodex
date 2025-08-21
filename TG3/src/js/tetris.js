@@ -1072,20 +1072,28 @@ class NESTetris {
         }
         
         try {
+            // 生成稳定的client_nonce，确保整个游戏生命周期中不变
+            const stableNonce = `game-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
             const scoreData = {
                 score: this.score,
                 level: this.level,
                 lines: this.linesClearedTotal,
                 duration: gameDuration * 1000, // 转换为毫秒
-                playerName: window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous'
+                playerName: window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous',
+                client_nonce: stableNonce // 一次性生成，保证重试时不变
             };
             
-            console.log('Submitting score to leaderboard:', scoreData);
+            console.log('=== 提交成绩到世界排行榜 ===');
+            console.log('Score Data:', scoreData);
+            console.log('Stable Nonce:', stableNonce);
+            console.log('Player ID:', window.playerNameManager?.getPlayerId());
             
             const result = await window.scoreSubmissionManager.submitScore(scoreData);
             
             if (result.success) {
-                console.log('Score submitted successfully');
+                console.log('=== 成绩提交成功 ===');
+                console.log('Result:', result);
                 
                 // 检查是否进入Top50并更新玩家名字显示
                 if (window.playerNameManager && window.playerNameManager.updateTop50Status) {
@@ -1093,19 +1101,23 @@ class NESTetris {
                     window.playerNameManager.updateTop50Status(isInTop50);
                 }
                 
-                // 刷新排行榜
+                // 刷新排行榜 - 强制非静默刷新，确保更新
                 if (window.tetrisWorldLeaderboard) {
-                    window.tetrisWorldLeaderboard.loadWorldScores();
+                    window.tetrisWorldLeaderboard.loadWorldScores({ silent: false });
                 }
                 // 更新上传状态提示（成功）
                 this.showUploadStatus('Congratulations, you\'ve earned a place.', false);
             } else {
-                console.error('Score submission failed:', result.error);
+                console.error('=== 成绩提交失败 ===');
+                console.error('Error:', result.error);
+                console.error('Score Data:', scoreData);
                 // 上传失败提示
                 this.showUploadStatus('You need to try harder.', true);
             }
         } catch (error) {
-            console.error('Error submitting score:', error);
+            console.error('=== 成绩提交异常 ===');
+            console.error('Exception:', error);
+            console.error('Score Data:', scoreData);
             // 上传错误提示
             this.showUploadStatus('You need to try harder.', true);
         }

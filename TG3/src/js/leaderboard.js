@@ -198,15 +198,17 @@ class TetrisWorldLeaderboard {
                     ];
                 }
             } catch (_) {}
-            // Google Apps Script API URL
+            // Google Apps Script API URL - 统一使用config.js中的配置
+            const PRIMARY_API_URL = window.TW_CONFIG?.API_URL || 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
+            
+            // 备用端点（仅在主端点失败时使用）
             const API_ENDPOINTS = [
-                // 主端点 (v2.1.0 - 数据迁移后版本)
-                'https://script.google.com/macros/s/AKfycbxfQhUhw7A6vhlvUIoDTcJW5H1vqAz1kxmaZIBJIG9HSpWMYpkq_qWsgpwEPNwpqQ/exec',
+                PRIMARY_API_URL,
                 // 备用端点 (v2.0.0 - 修复版本)
                 'https://script.google.com/macros/s/AKfycbw2Q2cRwKgBsT2itkqEhWPYv-bZ-IEWhoEkQ8Oua5xwGrmjC2F34RAe3Gt2xDJ1cck/exec'
             ];
             
-            const API_URL = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : API_ENDPOINTS[0];
+            const API_URL = PRIMARY_API_URL;
             
             console.log('TetrisWorldLeaderboard: 正在从Google Apps Script获取数据...');
             console.log('🔗 使用API端点:', API_URL);
@@ -380,7 +382,7 @@ class TetrisWorldLeaderboard {
     // 显示服务器时间（采用请求返回的Date头或本地时间兜底）
     async updateServerTime() {
         try {
-            const apiUrl = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : '';
+            const apiUrl = window.TW_CONFIG?.API_URL || '';
             if (!apiUrl) return;
             const resp = await fetch(`${apiUrl}?action=get_scores`, { method: 'HEAD' });
             let serverDateStr = resp.headers.get('date');
@@ -480,18 +482,19 @@ class TetrisWorldLeaderboard {
         }
 
         console.log('🔍 开始去重处理，原始记录数：', scores.length);
+        console.log('📋 原始数据样本:', scores.slice(0, 5));
         
         const uniqueScores = new Map();
         let duplicateCount = 0;
 
         scores.forEach((score, index) => {
             // 标准化玩家名称：去除首尾空格，转换为小写用于比较
-            const normalizedName = (score.name || '').trim().toLowerCase();
+            let normalizedName = (score.name || '').trim().toLowerCase();
             
-            // 跳过空名称
-            if (!normalizedName) {
-                console.warn('⚠️ 跳过空名称记录：', score);
-                return;
+            // 处理空名称，使用 'anonymous' 作为默认值
+            if (!normalizedName || normalizedName === '') {
+                normalizedName = 'anonymous';
+                console.warn('⚠️ 空名称记录使用 anonymous:', score);
             }
 
             const existing = uniqueScores.get(normalizedName);
@@ -541,6 +544,9 @@ class TetrisWorldLeaderboard {
                 }
             }
         });
+        
+        console.log('🏆 去重完成，去重数:', duplicateCount);
+        console.log('👥 唯一玩家数:', uniqueScores.size);
 
         // 转换回数组并按分数排序
         const deduplicatedScores = Array.from(uniqueScores.values())

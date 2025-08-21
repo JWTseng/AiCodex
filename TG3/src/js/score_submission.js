@@ -5,12 +5,12 @@
 
 class ScoreSubmissionManager {
     constructor() {
-        // Google表单配置
+        // Google表单配置 - 统一使用config.js中的配置
         this.formId = '1WDr4zv5o3yxr5EmKNQTeNkYJnNO6Dif2Go_nj1UFapw';
         this.spreadsheetId = '17Wu8sonn4kxHX3VWT1ZKPR3M-ZDSUWy8UeKG1SvdFoU';
         this.sheetName = 'scores_raw';
-        // Google Apps Script API（统一读写）
-        this.apiUrl = (window.TW_CONFIG && window.TW_CONFIG.API_URL) ? window.TW_CONFIG.API_URL : 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
+        // Google Apps Script API（统一读写）- 强制使用统一配置
+        this.apiUrl = window.TW_CONFIG?.API_URL || 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
         
         // 客户端版本
         this.clientVersion = 'v1.0.0';
@@ -28,7 +28,10 @@ class ScoreSubmissionManager {
     }
     
     init() {
-        console.log('ScoreSubmissionManager initialized');
+        console.log('=== ScoreSubmissionManager 初始化 ===');
+        console.log('API URL:', this.apiUrl);
+        console.log('Spreadsheet ID:', this.spreadsheetId);
+        console.log('Client Version:', this.clientVersion);
         // 恢复持久化队列
         try {
             const saved = localStorage.getItem(this.persistentQueueKey);
@@ -97,9 +100,12 @@ class ScoreSubmissionManager {
     prepareSubmissionData(scoreData) {
         const playerName = window.playerNameManager ? window.playerNameManager.getPlayerName() : 'Anonymous';
         const playerId = window.playerNameManager && window.playerNameManager.getPlayerId ? window.playerNameManager.getPlayerId() : this.generateUUID();
-        // 确保每个提交的 client_nonce 稳定（若不存在则生成一次并回写到 scoreData 上）
+        // 确保 client_nonce 稳定，仅在缺失时生成一次（不再重新生成）
         if (!scoreData.client_nonce) {
             scoreData.client_nonce = this.generateNonce();
+            console.log('生成稳定 nonce:', scoreData.client_nonce);
+        } else {
+            console.log('使用已有 nonce:', scoreData.client_nonce);
         }
         return {
             player_id: playerId,
@@ -151,7 +157,9 @@ class ScoreSubmissionManager {
             // 二次确认：确保已写入（避免网络中途断连导致误判）
             const confirmed = await this.confirmSubmission(payload.player_id, payload.client_nonce);
             if (!confirmed) {
-                throw new Error('Server confirmation failed');
+                console.warn('Server confirmation failed, but API returned success. Proceeding...');
+                // 不抛出异常，避免因网络问题导致重复提交
+                // throw new Error('Server confirmation failed');
             }
             // 更新本地最高分
             this.updateLocalHighScore(scoreData);

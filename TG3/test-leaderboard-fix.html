@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>榜单修复验证工具</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f380f;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        .test-btn {
+            background: #00ff00;
+            color: #0f380f;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        .test-btn:hover {
+            background: #33ff33;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #00ff00;
+        }
+        .error {
+            color: #ff4444;
+        }
+        .warning {
+            color: #ffaa00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 榜单修复验证工具</h1>
+        <p>此工具用于验证世界榜单数据问题的修复效果</p>
+
+        <div class="test-section">
+            <h2>📊 配置验证</h2>
+            <button class="test-btn" onclick="testConfiguration()">检查配置一致性</button>
+            <div id="config-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 模拟游戏提交</h2>
+            <button class="test-btn" onclick="simulateGameSubmission()">模拟成绩提交</button>
+            <button class="test-btn" onclick="testDuplicateSubmission()">测试重复提交保护</button>
+            <div id="submission-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 榜单刷新测试</h2>
+            <button class="test-btn" onclick="testLeaderboardRefresh()">测试榜单刷新</button>
+            <button class="test-btn" onclick="checkDataConsistency()">检查数据一致性</button>
+            <div id="refresh-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗑️ 去重机制测试</h2>
+            <button class="test-btn" onclick="testDeduplication()">测试去重逻辑</button>
+            <div id="dedup-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 等待所有管理器初始化
+        setTimeout(() => {
+            console.log('=== 榜单修复验证工具已加载 ===');
+            
+            // 初始化所有管理器
+            try {
+                if (!window.playerNameManager) {
+                    window.playerNameManager = new PlayerNameManager();
+                    console.log('✅ PlayerNameManager 已初始化');
+                } else {
+                    console.log('✅ PlayerNameManager 已存在');
+                }
+            } catch (e) {
+                console.error('❌ PlayerNameManager 初始化失败:', e);
+            }
+            
+            try {
+                if (!window.scoreSubmissionManager) {
+                    window.scoreSubmissionManager = new ScoreSubmissionManager();
+                    console.log('✅ ScoreSubmissionManager 已初始化');
+                } else {
+                    console.log('✅ ScoreSubmissionManager 已存在');
+                }
+            } catch (e) {
+                console.error('❌ ScoreSubmissionManager 初始化失败:', e);
+            }
+            
+            try {
+                if (!window.tetrisWorldLeaderboard) {
+                    window.tetrisWorldLeaderboard = new TetrisWorldLeaderboard();
+                    console.log('✅ TetrisWorldLeaderboard 已初始化');
+                } else {
+                    console.log('✅ TetrisWorldLeaderboard 已存在');
+                }
+            } catch (e) {
+                console.error('❌ TetrisWorldLeaderboard 初始化失败:', e);
+            }
+            
+            // 再次检查
+            console.log('最终状态检查:');
+            console.log('PlayerNameManager:', window.playerNameManager ? '✅' : '❌');
+            console.log('ScoreSubmissionManager:', window.scoreSubmissionManager ? '✅' : '❌');
+            console.log('TetrisWorldLeaderboard:', window.tetrisWorldLeaderboard ? '✅' : '❌');
+        }, 2000);
+
+        function testConfiguration() {
+            const result = document.getElementById('config-result');
+            let output = '=== 配置一致性检查 ===\n\n';
+
+            try {
+                // 检查 TW_CONFIG
+                if (window.TW_CONFIG) {
+                    output += `✅ TW_CONFIG 已加载\n`;
+                    output += `API_URL: ${window.TW_CONFIG.API_URL}\n`;
+                } else {
+                    output += `❌ TW_CONFIG 未加载\n`;
+                }
+
+                // 检查 ScoreSubmissionManager 配置
+                if (window.scoreSubmissionManager) {
+                    output += `\n=== ScoreSubmissionManager 配置 ===\n`;
+                    output += `API URL: ${window.scoreSubmissionManager.apiUrl}\n`;
+                    output += `Spreadsheet ID: ${window.scoreSubmissionManager.spreadsheetId}\n`;
+                    output += `Client Version: ${window.scoreSubmissionManager.clientVersion}\n`;
+                    
+                    // 检查配置一致性
+                    if (window.TW_CONFIG && window.scoreSubmissionManager.apiUrl === window.TW_CONFIG.API_URL) {
+                        output += `✅ API URL 配置一致\n`;
+                    } else {
+                        output += `❌ API URL 配置不一致\n`;
+                    }
+                }
+
+                // 检查 PlayerNameManager
+                if (window.playerNameManager) {
+                    output += `\n=== PlayerNameManager 状态 ===\n`;
+                    output += `Player Name: ${window.playerNameManager.getPlayerName()}\n`;
+                    output += `Player ID: ${window.playerNameManager.getPlayerId()}\n`;
+                }
+
+                result.className = 'result success';
+            } catch (error) {
+                output += `\n❌ 配置检查异常: ${error.message}\n`;
+                result.className = 'result error';
+            }
+
+            result.textContent = output;
+        }
+
+        function simulateGameSubmission() {
+            const result = document.getElementById('submission-result');
+            let output = '=== 模拟成绩提交测试 ===\n\n';
+
+            try {
+                if (!window.scoreSubmissionManager) {
+                    throw new Error('ScoreSubmissionManager 不可用');
+                }
+
+                // 模拟游戏数据
+                const mockGameData = {
+                    score: Math.floor(Math.random() * 50000) + 1000,
+                    level: Math.floor(Math.random() * 15) + 1,
+                    lines: Math.floor(Math.random() * 100) + 10,
+                    duration: Math.floor(Math.random() * 300000) + 60000,
+                    playerName: window.playerNameManager ? window.playerNameManager.getPlayerName() : 'TestPlayer',
+                    client_nonce: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                };
+
+                output += `测试数据:\n`;
+                output += `Score: ${mockGameData.score}\n`;
+                output += `Level: ${mockGameData.level}\n`;
+                output += `Lines: ${mockGameData.lines}\n`;
+                output += `Player: ${mockGameData.playerName}\n`;
+                output += `Nonce: ${mockGameData.client_nonce}\n\n`;
+
+                // 执行提交
+                window.scoreSubmissionManager.submitScore(mockGameData).then(submitResult => {
+                    output += `提交结果: ${submitResult.success ? '✅ 成功' : '❌ 失败'}\n`;
+                    if (submitResult.success) {
+                        output += `消息: ${submitResult.message}\n`;
+                    } else {
+                        output += `错误: ${submitResult.error}\n`;
+                    }
+                    result.textContent = output;
+                    result.className = submitResult.success ? 'result success' : 'result error';
+                }).catch(error => {
+                    output += `\n❌ 提交异常: ${error.message}\n`;
+                    result.textContent = output;
+                    result.className = 'result error';
+                });
+
+                result.textContent = output + '⏳ 正在提交...\n';
+                result.className = 'result warning';
+
+            } catch (error) {
+                output += `❌ 测试异常: ${error.message}\n`;
+                result.textContent = output;
+                result.className = 'result error';
+            }
+        }
+
+        function testDuplicateSubmission() {
+            const result = document.getElementById('submission-result');
+            let output = '=== 重复提交保护测试 ===\n\n';
+
+            try {
+                if (!window.scoreSubmissionManager) {
+                    throw new Error('ScoreSubmissionManager 不可用');
+                }
+
+                // 相同的游戏数据（相同的nonce）
+                const stableNonce = `duplicate-test-${Date.now()}`;
+                const duplicateGameData = {
+                    score: 12345,
+                    level: 5,
+                    lines: 50,
+                    duration: 180000,
+                    playerName: window.playerNameManager ? window.playerNameManager.getPlayerName() : 'TestPlayer',
+                    client_nonce: stableNonce
+                };
+
+                output += `使用稳定 Nonce: ${stableNonce}\n\n`;
+
+                // 第一次提交
+                output += `第一次提交...\n`;
+                result.textContent = output;
+
+                window.scoreSubmissionManager.submitScore(duplicateGameData).then(firstResult => {
+                    output += `第一次结果: ${firstResult.success ? '✅ 成功' : '❌ 失败'}\n`;
+                    if (!firstResult.success) output += `错误: ${firstResult.error}\n`;
+                    
+                    // 第二次提交（应该被拒绝或识别为重复）
+                    output += `\n第二次提交（测试重复保护）...\n`;
+                    result.textContent = output;
+
+                    return window.scoreSubmissionManager.submitScore(duplicateGameData);
+                }).then(secondResult => {
+                    output += `第二次结果: ${secondResult.success ? '✅ 成功' : '❌ 失败'}\n`;
+                    if (!secondResult.success) {
+                        output += `错误: ${secondResult.error}\n`;
+                        if (secondResult.error.includes('queued') || secondResult.error.includes('duplicate')) {
+                            output += `✅ 重复提交保护机制工作正常\n`;
+                        }
+                    }
+                    result.textContent = output;
+                    result.className = 'result success';
+                }).catch(error => {
+                    output += `❌ 测试异常: ${error.message}\n`;
+                    result.textContent = output;
+                    result.className = 'result error';
+                });
+
+                result.className = 'result warning';
+
+            } catch (error) {
+                output += `❌ 测试异常: ${error.message}\n`;
+                result.textContent = output;
+                result.className = 'result error';
+            }
+        }
+
+        function testLeaderboardRefresh() {
+            const result = document.getElementById('refresh-result');
+            let output = '=== 榜单刷新测试 ===\n\n';
+
+            try {
+                if (!window.tetrisWorldLeaderboard) {
+                    throw new Error('TetrisWorldLeaderboard 不可用');
+                }
+
+                output += `测试强制刷新...\n`;
+                result.textContent = output;
+
+                // 记录刷新前的数据
+                const beforeData = window.tetrisWorldLeaderboard.worldScores ? 
+                    window.tetrisWorldLeaderboard.worldScores.length : 0;
+                
+                output += `刷新前记录数: ${beforeData}\n`;
+
+                // 执行强制刷新
+                window.tetrisWorldLeaderboard.loadWorldScores({ silent: false }).then(() => {
+                    const afterData = window.tetrisWorldLeaderboard.worldScores ? 
+                        window.tetrisWorldLeaderboard.worldScores.length : 0;
+                    
+                    output += `刷新后记录数: ${afterData}\n`;
+                    output += `✅ 榜单刷新完成\n`;
+                    
+                    if (afterData > 0) {
+                        output += `\n前3名玩家:\n`;
+                        const top3 = window.tetrisWorldLeaderboard.worldScores.slice(0, 3);
+                        top3.forEach((player, index) => {
+                            output += `${index + 1}. ${player.name}: ${player.score}\n`;
+                        });
+                    }
+                    
+                    result.textContent = output;
+                    result.className = 'result success';
+                }).catch(error => {
+                    output += `❌ 刷新失败: ${error.message}\n`;
+                    result.textContent = output;
+                    result.className = 'result error';
+                });
+
+                result.className = 'result warning';
+
+            } catch (error) {
+                output += `❌ 测试异常: ${error.message}\n`;
+                result.textContent = output;
+                result.className = 'result error';
+            }
+        }
+
+        function checkDataConsistency() {
+            const result = document.getElementById('refresh-result');
+            let output = '=== 数据一致性检查 ===\n\n';
+
+            try {
+                if (!window.tetrisWorldLeaderboard) {
+                    throw new Error('TetrisWorldLeaderboard 不可用');
+                }
+
+                const scores = window.tetrisWorldLeaderboard.worldScores;
+                if (!scores || scores.length === 0) {
+                    output += `❌ 没有榜单数据\n`;
+                    result.textContent = output;
+                    result.className = 'result error';
+                    return;
+                }
+
+                output += `总记录数: ${scores.length}\n`;
+
+                // 检查重复玩家
+                const playerNames = new Map();
+                let duplicateCount = 0;
+
+                scores.forEach((score, index) => {
+                    const name = score.name ? score.name.toLowerCase().trim() : 'unknown';
+                    if (playerNames.has(name)) {
+                        duplicateCount++;
+                        output += `⚠️  发现重复玩家: ${score.name} (位置 ${index + 1})\n`;
+                    } else {
+                        playerNames.set(name, true);
+                    }
+                });
+
+                output += `\n去重统计:\n`;
+                output += `唯一玩家数: ${playerNames.size}\n`;
+                output += `重复记录数: ${duplicateCount}\n`;
+
+                if (duplicateCount === 0) {
+                    output += `✅ 没有发现重复数据\n`;
+                    result.className = 'result success';
+                } else {
+                    output += `❌ 发现 ${duplicateCount} 条重复数据\n`;
+                    result.className = 'result warning';
+                }
+
+                result.textContent = output;
+
+            } catch (error) {
+                output += `❌ 检查异常: ${error.message}\n`;
+                result.textContent = output;
+                result.className = 'result error';
+            }
+        }
+
+        function testDeduplication() {
+            const result = document.getElementById('dedup-result');
+            let output = '=== 去重机制测试 ===\n\n';
+
+            try {
+                if (!window.tetrisWorldLeaderboard) {
+                    throw new Error('TetrisWorldLeaderboard 不可用');
+                }
+
+                // 测试前端去重功能
+                const testData = [
+                    { name: 'Alice', score: 1000, level: 5, lines: 20 },
+                    { name: 'Alice', score: 1500, level: 6, lines: 25 }, // 同名更高分
+                    { name: 'Bob', score: 800, level: 4, lines: 15 },
+                    { name: 'alice', score: 900, level: 4, lines: 18 }, // 同名小写
+                    { name: 'Charlie', score: 1200, level: 5, lines: 22 }
+                ];
+
+                output += `测试数据 (${testData.length} 条):\n`;
+                testData.forEach((data, index) => {
+                    output += `${index + 1}. ${data.name}: ${data.score}\n`;
+                });
+
+                // 执行去重
+                const deduplicated = window.tetrisWorldLeaderboard.deduplicateScores(testData);
+                
+                output += `\n去重后数据 (${deduplicated.length} 条):\n`;
+                deduplicated.forEach((data, index) => {
+                    output += `${index + 1}. ${data.name}: ${data.score}\n`;
+                });
+
+                // 验证结果
+                output += `\n=== 验证结果 ===\n`;
+                const expectedNames = ['Alice', 'Bob', 'Charlie'];
+                const actualNames = deduplicated.map(d => d.name);
+                
+                if (deduplicated.length === 3) {
+                    output += `✅ 去重后记录数正确 (3条)\n`;
+                } else {
+                    output += `❌ 去重后记录数错误 (期望3条，实际${deduplicated.length}条)\n`;
+                }
+
+                const aliceRecord = deduplicated.find(d => d.name.toLowerCase() === 'alice');
+                if (aliceRecord && aliceRecord.score === 1500) {
+                    output += `✅ Alice 保留了最高分 (1500)\n`;
+                } else {
+                    output += `❌ Alice 分数不正确\n`;
+                }
+
+                result.textContent = output;
+                result.className = 'result success';
+
+            } catch (error) {
+                output += `❌ 测试异常: ${error.message}\n`;
+                result.textContent = output;
+                result.className = 'result error';
+            }
+        }
+    </script>
+
+    <!-- 加载必要的脚本 -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/player_name_manager.js"></script>
+    <script src="src/js/score_submission.js"></script>
+    <script src="src/js/leaderboard.js"></script>
+</body>
+</html>

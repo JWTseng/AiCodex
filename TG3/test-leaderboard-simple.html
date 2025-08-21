@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化榜单测试</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f380f;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-btn {
+            background: #00ff00;
+            color: #0f380f;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .leaderboard-table th,
+        .leaderboard-table td {
+            border: 1px solid #00ff00;
+            padding: 8px;
+            text-align: left;
+        }
+        .leaderboard-table th {
+            background-color: #306230;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 简化榜单测试</h1>
+        
+        <button class="test-btn" onclick="loadAndDisplayLeaderboard()">加载并显示榜单</button>
+        <button class="test-btn" onclick="testDirectAPI()">直接API测试</button>
+        <button class="test-btn" onclick="clearResult()">清除结果</button>
+        
+        <div id="result" class="result">
+            点击上方按钮开始测试...
+        </div>
+        
+        <table class="leaderboard-table" id="leaderboard-display" style="display: none;">
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th>玩家</th>
+                    <th>分数</th>
+                    <th>等级</th>
+                    <th>行数</th>
+                    <th>时间</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 加载必要的脚本 -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/player_name_manager.js"></script>
+    <script src="src/js/score_submission.js"></script>
+    <script src="src/js/leaderboard.js"></script>
+
+    <script>
+        let testLeaderboard = null;
+        
+        // 等待脚本加载
+        setTimeout(() => {
+            try {
+                // 手动初始化榜单
+                testLeaderboard = new TetrisWorldLeaderboard();
+                console.log('✅ 测试榜单已初始化');
+            } catch (error) {
+                console.error('❌ 榜单初始化失败:', error);
+            }
+        }, 1000);
+
+        function clearResult() {
+            document.getElementById('result').textContent = '结果已清除';
+            document.getElementById('leaderboard-display').style.display = 'none';
+        }
+
+        async function loadAndDisplayLeaderboard() {
+            const result = document.getElementById('result');
+            let output = '=== 加载榜单测试 ===\n\n';
+            
+            try {
+                if (!testLeaderboard) {
+                    throw new Error('榜单未初始化');
+                }
+                
+                output += '正在加载榜单数据...\n';
+                result.textContent = output;
+                
+                // 使用修复后的加载方法
+                await testLeaderboard.loadWorldScores({ silent: false });
+                
+                const scores = testLeaderboard.worldScores;
+                
+                output += `\n=== 加载结果 ===\n`;
+                output += `总记录数: ${scores ? scores.length : 0}\n`;
+                
+                if (scores && scores.length > 0) {
+                    output += `\n前10名:\n`;
+                    scores.slice(0, 10).forEach((score, index) => {
+                        output += `${index + 1}. ${score.name}: ${score.score} (Lv.${score.level})\n`;
+                    });
+                    
+                    // 显示表格
+                    displayLeaderboardTable(scores);
+                    
+                    // 检查重复玩家
+                    const playerNames = new Map();
+                    let duplicateCount = 0;
+                    scores.forEach(score => {
+                        const name = score.name.toLowerCase().trim();
+                        if (playerNames.has(name)) {
+                            duplicateCount++;
+                        } else {
+                            playerNames.set(name, true);
+                        }
+                    });
+                    
+                    output += `\n=== 去重分析 ===\n`;
+                    output += `唯一玩家数: ${playerNames.size}\n`;
+                    output += `重复记录数: ${duplicateCount}\n`;
+                    
+                    if (duplicateCount === 0) {
+                        output += `✅ 没有发现重复数据\n`;
+                    } else {
+                        output += `⚠️ 发现 ${duplicateCount} 条重复数据\n`;
+                    }
+                } else {
+                    output += `❌ 没有获取到榜单数据\n`;
+                }
+                
+                result.textContent = output;
+                
+            } catch (error) {
+                output += `❌ 测试失败: ${error.message}\n`;
+                result.textContent = output;
+            }
+        }
+
+        async function testDirectAPI() {
+            const result = document.getElementById('result');
+            let output = '=== 直接API测试 ===\n\n';
+            
+            try {
+                const apiUrl = window.TW_CONFIG?.API_URL || 'https://script.google.com/macros/s/AKfycbw9oCs3E9iPT2u2IukGvg_36MHjcjYxtdqaYGzd4zv0NNU9VrllIpiBqF5u6_I0bwE/exec';
+                
+                output += `API地址: ${apiUrl}\n\n`;
+                output += '正在请求数据...\n';
+                result.textContent = output;
+                
+                const response = await fetch(`${apiUrl}?action=get_scores&limit=50`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                output += `API响应状态: ${response.status}\n`;
+                output += `响应数据:\n`;
+                output += `- 版本: ${data.version || '未知'}\n`;
+                output += `- 记录数: ${data.scores ? data.scores.length : 0}\n`;
+                output += `- 时间戳: ${data.timestamp || '未知'}\n`;
+                
+                if (data.scores && data.scores.length > 0) {
+                    output += `\n原始数据前5条:\n`;
+                    data.scores.slice(0, 5).forEach((score, index) => {
+                        output += `${index + 1}. ${score.player_name}: ${score.score}\n`;
+                    });
+                    
+                    // 分析数据
+                    const playerNames = new Map();
+                    let duplicateCount = 0;
+                    data.scores.forEach(score => {
+                        const name = (score.player_name || '').toLowerCase().trim();
+                        if (playerNames.has(name)) {
+                            duplicateCount++;
+                        } else {
+                            playerNames.set(name, true);
+                        }
+                    });
+                    
+                    output += `\n=== API数据分析 ===\n`;
+                    output += `唯一玩家数: ${playerNames.size}\n`;
+                    output += `重复记录数: ${duplicateCount}\n`;
+                    
+                    if (duplicateCount === 0) {
+                        output += `✅ API返回的数据已去重\n`;
+                    } else {
+                        output += `⚠️ API返回的数据包含重复\n`;
+                    }
+                }
+                
+                result.textContent = output;
+                
+            } catch (error) {
+                output += `❌ API测试失败: ${error.message}\n`;
+                result.textContent = output;
+            }
+        }
+
+        function displayLeaderboardTable(scores) {
+            const table = document.getElementById('leaderboard-display');
+            const tbody = document.getElementById('leaderboard-body');
+            
+            tbody.innerHTML = '';
+            
+            scores.forEach((score, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${score.name}</td>
+                    <td>${score.score.toString().padStart(7, '0')}</td>
+                    <td>${score.level}</td>
+                    <td>${score.lines}</td>
+                    <td>${formatTime(score.duration)}</td>
+                `;
+                
+                if (index === 0) {
+                    row.style.color = '#ffd700';
+                    row.style.fontWeight = 'bold';
+                }
+            });
+            
+            table.style.display = 'table';
+        }
+
+        function formatTime(durationMs) {
+            const minutes = Math.floor(durationMs / 60000);
+            const seconds = Math.floor((durationMs % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
